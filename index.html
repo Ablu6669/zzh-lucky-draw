@@ -1,0 +1,1950 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🎲 动态抽签系统</title>
+<style>
+/* ============ 基础重置 ============ */
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
+
+:root{
+  --bg-1:#0f0c29;--bg-2:#302b63;--bg-3:#24243e;
+  --glass:rgba(255,255,255,.06);--glass-hover:rgba(255,255,255,.1);
+  --glass-border:rgba(255,255,255,.12);
+  --text:#f0f0f5;--text-muted:#9999aa;
+  --accent:#e94560;--accent-2:#f5a623;--gold:#ffd700;--success:#00f5a0;
+  --radius:16px;--shadow:0 8px 32px rgba(0,0,0,.3);
+}
+
+body{
+  font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',sans-serif;
+  background:linear-gradient(135deg,var(--bg-1),var(--bg-2),var(--bg-3));
+  background-attachment:fixed;color:var(--text);min-height:100vh;padding:20px 16px 40px;
+}
+
+.app{max-width:900px;margin:0 auto;}
+
+/* ============ 头部 ============ */
+header{text-align:center;padding:30px 0 20px;}
+header h1{
+  font-size:2.4em;font-weight:800;
+  background:linear-gradient(135deg,#e94560,#f5a623,#ffd700);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+}
+header p{color:var(--text-muted);margin-top:8px;font-size:1em;}
+
+/* ============ 面板 ============ */
+.panel{
+  background:var(--glass);border:1px solid var(--glass-border);border-radius:var(--radius);
+  padding:24px;margin-bottom:20px;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+}
+.panel-title{font-size:1.05em;font-weight:700;margin-bottom:14px;display:flex;align-items:center;gap:6px;}
+
+/* ============ 输入区 ============ */
+label{display:block;font-size:.88em;color:var(--text-muted);margin-bottom:6px;font-weight:600;}
+textarea{
+  width:100%;min-height:110px;background:rgba(0,0,0,.25);border:1px solid var(--glass-border);
+  border-radius:12px;color:var(--text);padding:14px;font-size:15px;resize:vertical;font-family:inherit;
+  transition:border-color .2s;line-height:1.6;
+}
+textarea:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(233,69,96,.15);}
+textarea::placeholder{color:#555566;}
+
+.presets{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;}
+.preset-btn{
+  background:rgba(255,255,255,.08);border:1px solid var(--glass-border);color:var(--text);
+  padding:7px 14px;border-radius:20px;cursor:pointer;font-size:.85em;transition:all .2s;white-space:nowrap;
+}
+.preset-btn:hover{background:rgba(255,255,255,.15);border-color:var(--accent);transform:translateY(-1px);}
+
+/* ============ 控制行 ============ */
+.control-row{display:flex;gap:24px;flex-wrap:wrap;align-items:flex-end;margin-top:18px;}
+.control-row>div{flex:1;min-width:160px;}
+.num-input{display:flex;align-items:center;background:rgba(0,0,0,.25);border:1px solid var(--glass-border);border-radius:12px;overflow:hidden;}
+.num-btn{
+  width:42px;height:42px;background:transparent;border:none;color:var(--text);font-size:1.3em;
+  cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .2s;user-select:none;
+}
+.num-btn:hover{background:rgba(255,255,255,.1);}
+.num-input input{
+  width:54px;text-align:center;background:transparent;border:none;color:var(--text);
+  font-size:1.15em;font-weight:700;font-family:inherit;
+}
+.num-input input:focus{outline:none;}
+.num-input input::-webkit-outer-spin-button,
+.num-input input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0;}
+
+.checkbox-wrap{display:flex;align-items:center;gap:8px;cursor:pointer;height:42px;}
+.checkbox-wrap input[type=checkbox]{width:20px;height:20px;accent-color:var(--accent);cursor:pointer;}
+.checkbox-wrap span{font-size:.92em;color:var(--text);}
+
+/* ============ 效果选择 ============ */
+.effect-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(118px,1fr));gap:8px;}
+.effect-card{
+  background:rgba(255,255,255,.05);border:2px solid transparent;border-radius:14px;padding:14px 10px;
+  text-align:center;cursor:pointer;transition:all .2s;position:relative;overflow:hidden;
+  display:flex;align-items:center;justify-content:center;gap:8px;
+}
+.effect-card::before{
+  content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(233,69,96,.15),rgba(245,166,35,.15));
+  opacity:0;transition:opacity .2s;
+}
+.effect-card:hover{background:rgba(255,255,255,.1);transform:translateY(-3px);}
+.effect-card:hover::before{opacity:.5;}
+.effect-card.selected{border-color:var(--accent);background:rgba(233,69,96,.12);}
+.effect-card.selected::before{opacity:1;}
+.effect-icon{font-size:1.6em;display:inline-block;position:relative;z-index:1;line-height:1;}
+.effect-name{font-size:.95em;color:var(--text);font-weight:600;position:relative;z-index:1;line-height:1.2;}
+
+/* ============ 舞台 ============ */
+.stage-panel{min-height:480px;display:flex;flex-direction:column;align-items:center;justify-content:center;}
+.round-indicator{text-align:center;color:var(--accent-2);font-weight:700;margin-bottom:12px;min-height:24px;font-size:1em;letter-spacing:1px;}
+.stage{
+  width:100%;min-height:380px;display:flex;align-items:center;justify-content:center;
+  position:relative;overflow:hidden;
+}
+.stage-empty{text-align:center;color:var(--text-muted);}
+.stage-empty .icon{font-size:3.5em;margin-bottom:12px;opacity:.5;}
+.stage-empty .text{font-size:1.05em;}
+
+/* ============ 按钮 ============ */
+.draw-btn{
+  display:block;width:100%;padding:18px;
+  background:linear-gradient(135deg,var(--accent),var(--accent-2));
+  border:none;border-radius:14px;color:#fff;font-size:1.25em;font-weight:800;
+  cursor:pointer;transition:all .25s;margin-bottom:20px;letter-spacing:2px;
+  box-shadow:0 6px 20px rgba(233,69,96,.3);
+}
+.draw-btn:hover:not(:disabled){transform:translateY(-2px);box-shadow:0 10px 30px rgba(233,69,96,.45);}
+.draw-btn:active:not(:disabled){transform:translateY(0);}
+.draw-btn:disabled{opacity:.5;cursor:not-allowed;}
+
+.action-btn{
+  background:rgba(255,255,255,.08);border:1px solid var(--glass-border);color:var(--text);
+  padding:10px 20px;border-radius:10px;cursor:pointer;font-size:.95em;transition:all .2s;font-family:inherit;
+}
+.action-btn:hover{background:rgba(255,255,255,.15);border-color:var(--accent);}
+.results-actions{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:16px;}
+
+/* ============ 结果 ============ */
+.results{text-align:center;animation:fadeInUp .5s ease;}
+.results-title{font-size:1.2em;color:var(--text-muted);margin-bottom:16px;}
+.results-items{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;}
+.result-item{
+  background:linear-gradient(135deg,var(--gold),var(--accent-2));color:#1a1a2e;
+  padding:12px 24px;border-radius:14px;font-weight:800;font-size:1.15em;
+  animation:resultPop .5s cubic-bezier(.2,.8,.3,1.2);box-shadow:0 6px 20px rgba(255,215,0,.3);
+  max-width:100%;word-break:break-all;
+}
+@keyframes resultPop{0%{transform:scale(0) rotate(-10deg);opacity:0;}60%{transform:scale(1.1) rotate(2deg);}100%{transform:scale(1) rotate(0);opacity:1;}}
+@keyframes fadeInUp{from{opacity:0;transform:translateY(20px);}to{opacity:1;transform:translateY(0);}}
+
+/* ============ 历史 ============ */
+.history-list{max-height:220px;overflow-y:auto;}
+.history-item{
+  display:flex;justify-content:space-between;align-items:center;gap:12px;
+  padding:10px 4px;border-bottom:1px solid rgba(255,255,255,.05);font-size:.9em;
+}
+.history-item:last-child{border-bottom:none;}
+.history-time{color:var(--text-muted);white-space:nowrap;font-size:.85em;}
+.history-winners{color:var(--gold);font-weight:600;text-align:right;word-break:break-all;}
+.history-empty{color:var(--text-muted);text-align:center;padding:20px;font-size:.9em;}
+
+/* ============ Toast ============ */
+.toast{
+  position:fixed;bottom:30px;left:50%;transform:translateX(-50%);
+  background:rgba(0,0,0,.85);color:#fff;padding:14px 28px;border-radius:12px;
+  z-index:10000;font-size:.95em;animation:toastIn .3s ease;box-shadow:0 8px 24px rgba(0,0,0,.4);
+  border:1px solid var(--glass-border);
+}
+@keyframes toastIn{from{opacity:0;transform:translate(-50%,20px);}to{opacity:1;transform:translate(-50%,0);}}
+
+/* ============ Confetti ============ */
+.confetti{position:fixed;top:-12px;width:10px;height:10px;z-index:9999;pointer-events:none;animation:confettiFall linear forwards;}
+@keyframes confettiFall{to{transform:translateY(110vh) rotate(720deg);}}
+
+/* ============ 单结果展示 ============ */
+.single-result{
+  font-size:2.5em;font-weight:900;
+  background:linear-gradient(135deg,var(--gold),var(--accent-2));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+  animation:resultPop .5s ease;text-align:center;
+}
+
+/* ===================================================== */
+/* ============ 效果1: 幸运转盘 ============ */
+/* ===================================================== */
+.wheel-wrapper{position:relative;display:flex;flex-direction:column;align-items:center;}
+#wheelCanvas{display:block;}
+.wheel-hint{margin-top:16px;font-size:1.1em;color:var(--text-muted);min-height:30px;text-align:center;transition:all .3s;}
+.wheel-hint.highlight{
+  font-size:1.4em;font-weight:800;color:var(--gold);
+  text-shadow:0 0 16px rgba(255,215,0,.5);animation:resultPop .4s ease;
+}
+
+/* ===================================================== */
+/* ============ 效果2: 老虎机 ============ */
+/* ===================================================== */
+.slot-machine{
+  width:300px;height:220px;overflow:hidden;position:relative;
+  border:4px solid var(--gold);border-radius:16px;background:rgba(0,0,0,.35);
+  box-shadow:0 0 30px rgba(255,215,0,.2),inset 0 0 20px rgba(0,0,0,.3);
+}
+.slot-machine::before,.slot-machine::after{
+  content:'';position:absolute;left:0;right:0;height:50px;z-index:5;pointer-events:none;
+}
+.slot-machine::before{top:0;background:linear-gradient(to bottom,rgba(15,12,41,.9),transparent);}
+.slot-machine::after{bottom:0;background:linear-gradient(to top,rgba(15,12,41,.9),transparent);}
+.slot-reel{will-change:transform;}
+.slot-item{
+  height:80px;display:flex;align-items:center;justify-content:center;
+  font-size:1.5em;font-weight:700;color:var(--text);border-bottom:1px solid rgba(255,255,255,.05);
+  word-break:break-all;text-align:center;padding:0 10px;
+}
+.slot-item:nth-child(odd){background:rgba(255,255,255,.02);}
+.slot-item:nth-child(even){background:rgba(255,255,255,.05);}
+.slot-indicator{
+  position:absolute;top:50%;left:-8px;right:-8px;height:3px;background:var(--gold);
+  transform:translateY(-50%);box-shadow:0 0 12px var(--gold);z-index:10;pointer-events:none;
+}
+.slot-indicator::before,.slot-indicator::after{
+  content:'';position:absolute;top:50%;width:0;height:0;border:8px solid transparent;transform:translateY(-50%);
+}
+.slot-indicator::before{left:-6px;border-right-color:var(--gold);}
+.slot-indicator::after{right:-6px;border-left-color:var(--gold);}
+.slot-winner-display{
+  /* 兼容旧类名 */
+  margin-top:20px;font-size:1.8em;font-weight:900;color:var(--gold);
+  text-shadow:0 0 20px rgba(255,215,0,.5);animation:resultPop .5s ease;
+}
+
+/* ===================================================== */
+/* ============ 效果3: 抽签桶 ============ */
+/* ===================================================== */
+.bucket-stage{position:relative;width:300px;height:380px;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;}
+.bucket{position:relative;width:200px;height:140px;transition:transform .1s;}
+.bucket-body{
+  position:absolute;bottom:0;left:0;width:100%;height:110px;
+  background:linear-gradient(135deg,#8B4513,#A0522D 40%,#6B3410);
+  clip-path:polygon(12% 0,88% 0,100% 100%,0% 100%);
+  border-radius:0 0 10px 10px;
+  box-shadow:inset 0 -10px 25px rgba(0,0,0,.4);
+}
+.bucket-rim{
+  position:absolute;top:0;left:-4%;width:108%;height:20px;
+  background:linear-gradient(135deg,#A0522D,#8B4513);border-radius:6px;z-index:2;
+  box-shadow:0 2px 6px rgba(0,0,0,.3);
+}
+.bucket-sticks{position:absolute;top:-50px;left:0;width:100%;display:flex;justify-content:center;gap:3px;z-index:1;}
+.stick{
+  width:7px;height:70px;border-radius:4px 4px 0 0;
+  background:var(--color,#e94560);
+  transform:rotate(var(--rot,0deg));
+  transform-origin:bottom center;
+  box-shadow:1px 0 2px rgba(0,0,0,.2);
+  transition:transform .15s;
+}
+.bucket.shaking{animation:bucketShake .08s ease-in-out infinite alternate;}
+@keyframes bucketShake{
+  0%{transform:rotate(-2deg) translateX(-3px);}
+  100%{transform:rotate(2deg) translateX(3px);}
+}
+.bucket.shaking .stick{animation:stickWiggle .1s ease-in-out infinite alternate;}
+@keyframes stickWiggle{to{transform:rotate(calc(var(--rot,0deg) + 3deg));}}
+
+.fortune-slip{
+  position:absolute;top:50%;left:50%;
+  width:170px;padding:20px 16px;
+  background:linear-gradient(135deg,#ffd700,#f5a623);color:#1a1a2e;
+  font-weight:800;font-size:1.2em;text-align:center;border-radius:10px;
+  transform:translate(-50%,120px) scale(0) rotate(-15deg);opacity:0;
+  transition:all .8s cubic-bezier(.2,.8,.3,1.3);
+  box-shadow:0 12px 35px rgba(0,0,0,.4);z-index:20;word-break:break-all;
+  border:2px solid rgba(255,255,255,.3);
+}
+.fortune-slip.show{transform:translate(-50%,-30%) scale(1) rotate(0deg);opacity:1;}
+.fortune-slip::before{content:'🎉';display:block;font-size:1.5em;margin-bottom:6px;}
+
+/* ===================================================== */
+/* ============ 效果4: 文字闪烁 ============ */
+/* ===================================================== */
+.flash-container{
+  display:flex;flex-wrap:wrap;gap:10px;justify-content:center;align-items:center;
+  max-width:600px;padding:20px;
+}
+.flash-tag{
+  background:rgba(255,255,255,.06);border:1px solid var(--glass-border);color:var(--text-muted);
+  padding:12px 22px;border-radius:12px;font-size:1.1em;font-weight:600;
+  transition:all .08s ease;word-break:break-all;text-align:center;
+}
+.flash-tag.active{
+  background:linear-gradient(135deg,var(--accent),var(--accent-2));color:#fff;
+  transform:scale(1.18);box-shadow:0 0 25px rgba(233,69,96,.5);border-color:transparent;
+}
+.flash-tag.winner{
+  background:linear-gradient(135deg,var(--gold),var(--accent-2));color:#1a1a2e;
+  transform:scale(1.35);box-shadow:0 0 40px rgba(255,215,0,.6);border-color:transparent;
+  animation:winnerPulse .6s ease infinite alternate;
+}
+@keyframes winnerPulse{to{transform:scale(1.42);box-shadow:0 0 55px rgba(255,215,0,.8);}}
+
+/* ===================================================== */
+/* ============ 效果5: 翻牌 ============ */
+/* ===================================================== */
+.card-container{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;max-width:600px;}
+.card-container.shuffling .card{animation:cardShuffle .35s ease-in-out infinite;}
+@keyframes cardShuffle{
+  0%,100%{transform:translate(0,0) rotate(0);}
+  25%{transform:translate(3px,-3px) rotate(1.5deg);}
+  50%{transform:translate(-3px,3px) rotate(-1.5deg);}
+  75%{transform:translate(3px,3px) rotate(1.5deg);}
+}
+.card{
+  width:85px;height:120px;perspective:1000px;cursor:pointer;
+  transition:opacity .4s,transform .4s;
+}
+.card.dimmed{opacity:.25;transform:scale(.88);}
+.card-inner{width:100%;height:100%;position:relative;transform-style:preserve-3d;transition:transform .6s cubic-bezier(.4,.2,.2,1);}
+.card.flipped .card-inner{transform:rotateY(180deg);}
+.card-front,.card-back{
+  position:absolute;width:100%;height:100%;backface-visibility:hidden;-webkit-backface-visibility:hidden;
+  border-radius:10px;display:flex;align-items:center;justify-content:center;font-weight:800;
+}
+.card-front{
+  background:linear-gradient(135deg,#7b2ff7,#e94560);color:rgba(255,255,255,.25);font-size:2.2em;
+  box-shadow:inset 0 0 20px rgba(0,0,0,.2);
+}
+.card-front::after{content:'?';color:rgba(255,255,255,.15);font-size:1.5em;}
+.card-back{
+  background:linear-gradient(135deg,#fff,#f0f0f5);color:#1a1a2e;transform:rotateY(180deg);
+  padding:10px;text-align:center;font-size:.9em;word-break:break-all;line-height:1.3;
+}
+.card.winner-card{transform:scale(1.25);z-index:10;}
+.card.winner-card .card-back{
+  background:linear-gradient(135deg,var(--gold),var(--accent-2));
+  box-shadow:0 0 35px rgba(255,215,0,.6);
+}
+.card-note{width:100%;text-align:center;color:var(--text-muted);font-size:.85em;margin-top:14px;}
+
+/* ===================================================== */
+/* ============ 效果6: 盲盒 ============ */
+/* ===================================================== */
+.box-container{display:flex;flex-wrap:wrap;gap:18px;justify-content:center;max-width:600px;}
+.box-container.shaking .gift-box{animation:boxShake .2s ease-in-out infinite alternate;}
+@keyframes boxShake{to{transform:rotate(4deg) translateY(-3px);}}
+.gift-box{
+  width:95px;height:95px;position:relative;cursor:pointer;
+  transition:opacity .4s,transform .4s;
+}
+.gift-box.dimmed{opacity:.25;transform:scale(.88);}
+.box-lid{
+  position:absolute;top:0;left:-6%;width:112%;height:26px;
+  background:linear-gradient(135deg,#e94560,#c73650);border-radius:6px;z-index:3;
+  box-shadow:0 3px 8px rgba(0,0,0,.3);transition:all .6s cubic-bezier(.3,.6,.3,1.2);
+}
+.box-lid::after{
+  content:'';position:absolute;top:50%;left:50%;width:8px;height:36px;
+  background:rgba(255,255,255,.3);border-radius:2px;transform:translate(-50%,-50%);
+}
+.box-body{
+  position:absolute;bottom:0;left:0;width:100%;height:72px;
+  background:linear-gradient(135deg,#f5a623,#d4901a);border-radius:6px;
+  overflow:hidden;z-index:1;box-shadow:0 4px 12px rgba(0,0,0,.2);
+}
+.box-body::before{
+  content:'';position:absolute;top:0;left:50%;width:8px;height:100%;
+  background:rgba(255,255,255,.2);transform:translateX(-50%);
+}
+.box-content{
+  position:absolute;bottom:8px;left:5px;right:5px;text-align:center;
+  font-size:.85em;font-weight:800;color:#1a1a2e;opacity:0;transform:translateY(40px);
+  transition:all .6s ease .3s;word-break:break-all;line-height:1.2;
+}
+.box-glow{
+  position:absolute;top:50%;left:50%;width:0;height:0;border-radius:50%;
+  background:radial-gradient(circle,rgba(255,215,0,.6),transparent 70%);
+  transform:translate(-50%,-50%);z-index:2;transition:all .6s ease;pointer-events:none;
+}
+.gift-box.opened .box-lid{transform:translateY(-50px) rotate(25deg);}
+.gift-box.opened .box-content{opacity:1;transform:translateY(-5px);}
+.gift-box.opened .box-glow{width:180px;height:180px;}
+.gift-box.opened{transform:scale(1.35);z-index:10;}
+
+/* ============ 页脚 ============ */
+footer{text-align:center;padding:20px 0;color:var(--text-muted);font-size:.82em;}
+footer a{color:var(--accent-2);text-decoration:none;}
+
+/* ===================================================== */
+/* ============ 效果7: 漩涡吸入 ============ */
+/* ===================================================== */
+.vortex-wrap{position:relative;display:flex;flex-direction:column;align-items:center;}
+
+/* ===================================================== */
+/* ============ 效果8: 烟花绽放 ============ */
+/* ===================================================== */
+.firework-wrap{position:relative;display:flex;flex-direction:column;align-items:center;}
+
+/* ===================================================== */
+/* ============ 效果9: 气球升空 ============ */
+/* ===================================================== */
+.balloon-container{
+  display:flex;flex-wrap:wrap;gap:14px;justify-content:center;align-items:flex-end;
+  min-height:380px;padding:20px 10px;position:relative;
+}
+.balloon{
+  position:relative;width:62px;height:130px;
+  animation:balloonFloat 2s ease-in-out infinite alternate;
+  transition:transform .35s,opacity .35s;cursor:pointer;
+}
+@keyframes balloonFloat{to{transform:translateY(-14px);}}
+.balloon-body{
+  width:62px;height:78px;border-radius:50% 50% 50% 50% / 55% 55% 45% 45%;
+  background:var(--bcolor,#e94560);position:relative;
+  box-shadow:inset -8px -10px 15px rgba(0,0,0,.18);
+}
+.balloon-body::after{
+  content:'';position:absolute;bottom:-6px;left:50%;transform:translateX(-50%);
+  width:0;height:0;border-left:5px solid transparent;border-right:5px solid transparent;
+  border-top:8px solid var(--bcolor,#e94560);
+}
+.balloon-body::before{
+  content:'';position:absolute;top:12px;left:12px;width:14px;height:18px;
+  background:rgba(255,255,255,.25);border-radius:50%;filter:blur(2px);
+}
+.balloon-string{
+  position:absolute;top:78px;left:50%;width:1px;height:50px;
+  background:rgba(255,255,255,.25);transform:translateX(-50%);
+}
+.balloon-text{
+  position:absolute;top:18px;left:50%;transform:translateX(-50%);
+  font-size:.72em;font-weight:800;color:#fff;text-align:center;
+  width:58px;word-break:break-all;line-height:1.1;pointer-events:none;
+  text-shadow:0 1px 3px rgba(0,0,0,.4);
+}
+.balloon.popped{animation:balloonPop .4s ease forwards;}
+@keyframes balloonPop{
+  0%{transform:scale(1);opacity:1;}
+  35%{transform:scale(1.35);opacity:.7;}
+  100%{transform:scale(0);opacity:0;}
+}
+.balloon.winner-pop{animation:winnerBalloon .8s ease forwards;}
+@keyframes winnerBalloon{
+  0%{transform:scale(1);}
+  25%{transform:scale(1.4);filter:brightness(1.5) drop-shadow(0 0 20px gold);}
+  100%{transform:scale(1.9);filter:brightness(1.8) drop-shadow(0 0 45px gold);}
+}
+
+/* ===================================================== */
+/* ============ 效果10: 水晶球 ============ */
+/* ===================================================== */
+.crystal-wrap{display:flex;flex-direction:column;align-items:center;gap:24px;}
+.crystal-ball{
+  position:relative;width:220px;height:220px;border-radius:50%;
+  background:radial-gradient(circle at 35% 35%,rgba(255,255,255,.12),rgba(15,12,41,.6));
+  border:3px solid rgba(255,255,255,.1);
+  box-shadow:0 0 60px rgba(123,47,247,.3),inset 0 0 40px rgba(123,47,247,.2);
+  overflow:hidden;
+}
+.crystal-canvas{position:absolute;top:10px;left:10px;width:200px;height:200px;}
+.crystal-shine{
+  position:absolute;top:15px;left:25px;width:50px;height:40px;
+  background:radial-gradient(ellipse,rgba(255,255,255,.4),transparent 70%);
+  border-radius:50%;pointer-events:none;z-index:5;
+}
+.crystal-stand{
+  width:100px;height:30px;margin-top:-8px;
+  background:linear-gradient(135deg,#8B4513,#A0522D);
+  clip-path:polygon(15% 0,85% 0,100% 100%,0% 100%);
+  border-radius:0 0 8px 8px;
+}
+.crystal-text{
+  position:absolute;bottom:-45px;left:50%;transform:translateX(-50%);
+  font-size:1.5em;font-weight:900;color:var(--gold);
+  text-shadow:0 0 20px rgba(255,215,0,.5);white-space:nowrap;
+  opacity:0;transition:all .5s ease;z-index:10;
+}
+.crystal-text.show{opacity:1;bottom:-30px;}
+.crystal-hint{color:var(--text-muted);font-size:1em;min-height:20px;}
+
+/* ===================================================== */
+/* ============ 效果11: 闪电链击 ============ */
+/* ===================================================== */
+.lightning-wrap{position:relative;width:100%;max-width:600px;}
+.lightning-grid{
+  display:flex;flex-wrap:wrap;gap:12px;justify-content:center;
+  position:relative;z-index:2;padding:10px;
+}
+.lightning-node{
+  background:rgba(255,255,255,.06);border:1px solid var(--glass-border);
+  color:var(--text-muted);padding:12px 22px;border-radius:12px;
+  font-size:1.1em;font-weight:600;transition:all .1s ease;
+  word-break:break-all;text-align:center;
+}
+.lightning-node.electrified{
+  background:rgba(0,212,255,.2);border-color:#00d4ff;color:#fff;
+  box-shadow:0 0 15px rgba(0,212,255,.5);transform:scale(1.08);
+}
+.lightning-node.winner-node{
+  background:linear-gradient(135deg,var(--gold),var(--accent-2));
+  color:#1a1a2e;border-color:transparent;
+  transform:scale(1.3);box-shadow:0 0 30px rgba(255,215,0,.6);
+  animation:winnerPulse .6s ease infinite alternate;
+}
+.lightning-svg{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:3;}
+.lightning-bolt{fill:none;stroke:#fff;stroke-width:2;opacity:.9;filter:drop-shadow(0 0 4px #00d4ff);}
+.lightning-bolt-glow{fill:none;stroke:#00d4ff;stroke-width:6;opacity:.4;filter:blur(3px);}
+
+/* ===================================================== */
+/* ============ 效果12: 靶心锁定 ============ */
+/* ===================================================== */
+.target-container{position:relative;max-width:600px;width:100%;}
+.target-grid{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;}
+.target-item{
+  background:rgba(255,255,255,.06);border:1px solid var(--glass-border);
+  color:var(--text-muted);padding:14px 22px;border-radius:12px;
+  font-size:1.1em;font-weight:600;transition:all .1s ease;
+  word-break:break-all;text-align:center;
+}
+.target-item.locked{
+  background:rgba(0,212,255,.15);border-color:rgba(0,212,255,.5);
+  color:#fff;transform:scale(1.05);
+}
+.target-item.target-winner{
+  background:linear-gradient(135deg,var(--gold),var(--accent-2));
+  color:#1a1a2e;border-color:transparent;
+  transform:scale(1.25);box-shadow:0 0 30px rgba(255,215,0,.6);
+  animation:winnerPulse .6s ease infinite alternate;
+}
+.crosshair{
+  position:absolute;width:60px;height:60px;
+  transform:translate(-50%,-50%);pointer-events:none;z-index:10;
+  transition:left .06s linear,top .06s linear;
+}
+.crosshair.locked-on{transition:all .3s ease;}
+.crosshair-circle{
+  position:absolute;inset:0;border:2px solid #00d4ff;border-radius:50%;
+  box-shadow:0 0 15px rgba(0,212,255,.5);animation:crosshairSpin 2s linear infinite;
+}
+.crosshair.locked-on .crosshair-circle{
+  border-color:var(--gold);box-shadow:0 0 25px rgba(255,215,0,.6);
+  animation:crosshairLock .3s ease;
+}
+@keyframes crosshairSpin{to{transform:rotate(360deg);}}
+@keyframes crosshairLock{0%{transform:scale(1.5);}100%{transform:scale(1);}}
+.crosshair-line-h,.crosshair-line-v{position:absolute;background:#00d4ff;box-shadow:0 0 8px #00d4ff;}
+.crosshair-line-h{top:50%;left:-15px;right:-15px;height:1px;transform:translateY(-50%);}
+.crosshair-line-v{left:50%;top:-15px;bottom:-15px;width:1px;transform:translateX(-50%);}
+.crosshair.locked-on .crosshair-line-h,
+.crosshair.locked-on .crosshair-line-v{background:var(--gold);box-shadow:0 0 8px var(--gold);}
+.crosshair-dot{
+  position:absolute;top:50%;left:50%;width:4px;height:4px;
+  background:#00d4ff;border-radius:50%;transform:translate(-50%,-50%);
+  box-shadow:0 0 10px #00d4ff;
+}
+.crosshair.locked-on .crosshair-dot{background:var(--gold);box-shadow:0 0 15px var(--gold);}
+
+/* ===================================================== */
+/* ============ 效果13: 波浪涌动 ============ */
+/* ===================================================== */
+/* Canvas-based, no extra CSS needed */
+
+/* ===================================================== */
+/* ============ 效果15: 流星雨 ============ */
+/* ===================================================== */
+/* Canvas-based, no extra CSS needed */
+
+/* ===================================================== */
+/* ============ 效果20: 胶片定格 ============ */
+/* ===================================================== */
+.film-container{
+  width:220px;height:240px;overflow:hidden;position:relative;
+  border:3px solid #333;border-radius:8px;background:#0a0a0a;
+}
+.film-container::before,.film-container::after{
+  content:'';position:absolute;left:0;right:0;height:14px;
+  background:#1a1a1a;z-index:2;
+  background-image:repeating-linear-gradient(90deg,transparent 0,transparent 7px,#0a0a0a 7px,#0a0a0a 14px);
+}
+.film-container::before{top:0;}
+.film-container::after{bottom:0;}
+.film-strip{transition:none;}
+.film-frame{
+  height:56px;display:flex;align-items:center;justify-content:center;
+  font-size:1.1em;font-weight:700;color:#ccc;
+  border-bottom:1px solid #222;overflow:hidden;text-align:center;padding:0 10px;word-break:break-all;
+}
+.film-frame.film-winner{
+  background:rgba(255,215,0,.15);color:var(--gold);font-size:1.3em;
+  text-shadow:0 0 10px rgba(255,215,0,.4);
+}
+.film-frame.film-dimmed{opacity:.25;}
+
+/* ===================================================== */
+/* ============ 效果22: 糖果机 ============ */
+/* ===================================================== */
+.candy-machine{position:relative;display:flex;flex-direction:column;align-items:center;}
+.candy-dome{
+  width:150px;height:130px;background:rgba(255,255,255,.06);
+  border:3px solid rgba(255,255,255,.18);
+  border-radius:75px 75px 8px 8px;position:relative;overflow:hidden;
+}
+.candy-body{
+  width:130px;height:44px;background:rgba(233,69,96,.18);
+  border:3px solid rgba(233,69,96,.35);border-radius:8px;margin-top:-3px;
+}
+.candy-chute{
+  width:56px;height:46px;background:rgba(255,255,255,.04);
+  border:3px solid rgba(255,255,255,.12);
+  border-radius:0 0 28px 28px;margin-top:-3px;position:relative;overflow:hidden;
+}
+.candy-ball{
+  position:absolute;width:18px;height:18px;border-radius:50%;
+  animation:candyBounce .5s ease-in-out infinite alternate;
+}
+@keyframes candyBounce{0%{transform:translateY(0);}100%{transform:translateY(8px);}}
+.candy-ball.candy-drop{animation:candyDrop .8s cubic-bezier(.4,0,.8,.6) forwards;z-index:10;}
+@keyframes candyDrop{0%{transform:translateY(0);}100%{transform:translateY(110px);opacity:0;}}
+.candy-ball.candy-pop{position:relative;margin:4px auto;animation:candyPop .4s cubic-bezier(.2,.8,.3,1.5);}
+@keyframes candyPop{0%{transform:scale(0);}100%{transform:scale(1.5);}}
+.candy-ball.burst{animation:candyBurst .4s ease-out forwards;}
+@keyframes candyBurst{0%{transform:scale(1.5);opacity:1;}100%{transform:scale(3);opacity:0;}}
+.candy-label{
+  position:absolute;bottom:-35px;left:50%;
+  transform:translate(-50%,10px) scale(.5);opacity:0;
+  font-size:1.4em;font-weight:900;color:var(--gold);
+  text-shadow:0 0 15px rgba(255,215,0,.5);
+  transition:all .5s cubic-bezier(.2,.8,.3,1.2);white-space:nowrap;
+}
+.candy-label.show{transform:translate(-50%,0) scale(1);opacity:1;}
+
+/* ===================================================== */
+/* ============ 效果23: 塔罗占卜 ============ */
+/* ===================================================== */
+.tarot-container{display:flex;gap:18px;justify-content:center;align-items:center;perspective:800px;}
+.tarot-container.tarot-shuffle{animation:tarotShuffle .4s ease-in-out 3;}
+@keyframes tarotShuffle{0%,100%{transform:translateX(0);}25%{transform:translateX(-10px) rotate(-2deg);}75%{transform:translateX(10px) rotate(2deg);}}
+.tarot-card{
+  width:84px;height:130px;perspective:600px;
+  transition:transform .5s ease,opacity .5s ease;
+}
+.tarot-inner{
+  position:relative;width:100%;height:100%;
+  transition:transform .6s;transform-style:preserve-3d;
+}
+.tarot-card.tarot-flipped .tarot-inner{transform:rotateY(180deg);}
+.tarot-back,.tarot-front{
+  position:absolute;inset:0;backface-visibility:hidden;border-radius:10px;
+  display:flex;align-items:center;justify-content:center;
+  font-weight:800;text-align:center;padding:8px;word-break:break-all;
+}
+.tarot-back{
+  background:linear-gradient(135deg,#1a0a2e,#4a1052);
+  border:2px solid var(--gold);color:var(--gold);font-size:2em;
+}
+.tarot-front{
+  background:linear-gradient(135deg,var(--gold),var(--accent-2));
+  color:#1a1a2e;border:2px solid var(--gold);
+  transform:rotateY(180deg);font-size:.95em;
+}
+.tarot-card.tarot-dimmed{opacity:.25;transform:scale(.85);}
+
+/* ===================================================== */
+/* ============ 通用：最终结果展示（所有特效统一） ============ */
+/* ===================================================== */
+.final-winner{
+  margin-top:24px;padding:18px 36px;
+  background:rgba(15,12,41,.85);
+  border:3px solid var(--gold);border-radius:20px;
+  font-size:2.6em;font-weight:900;color:var(--gold);
+  text-shadow:0 0 18px rgba(255,215,0,.55);
+  animation:resultPop .55s cubic-bezier(.2,.8,.3,1.2);
+  box-shadow:0 0 36px rgba(255,215,0,.45),inset 0 0 20px rgba(255,215,0,.08);
+  display:inline-flex;align-items:center;gap:14px;
+  letter-spacing:1px;line-height:1.2;
+  max-width:90%;word-break:break-all;text-align:center;
+}
+/* ============ 响应式 ============ */
+@media(max-width:600px){
+  header h1{font-size:1.8em;}
+  .panel{padding:18px 16px;}
+  .effect-grid{grid-template-columns:repeat(3,1fr);gap:10px;}
+  .effect-card{padding:14px 6px;}
+  .effect-icon{font-size:1.8em;}
+  .effect-name{font-size:.82em;}
+  .stage{min-height:360px;}
+  .stage-panel{min-height:460px;}
+  .slot-machine{width:260px;}
+  .draw-btn{font-size:1.1em;padding:16px;}
+  .card{width:72px;height:102px;}
+  .gift-box{width:80px;height:80px;}
+  .control-row{gap:16px;}
+  .final-winner{font-size:1.6em;padding:14px 22px;gap:10px;}
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <h1>🎲 动态抽签系统</h1>
+    <p>多种炫酷动态效果，让抽签更有仪式感</p>
+  </header>
+
+  <!-- 输入面板 -->
+  <div class="panel">
+    <div class="panel-title">📋 抽签设置</div>
+    <label>抽签内容（每行一个，或用逗号 / 顿号分隔）</label>
+    <textarea id="items" placeholder="例如：&#10;张三&#10;李四&#10;王五&#10;赵六"></textarea>
+    <div class="presets">
+      <button class="preset-btn" data-preset="lunch">🍔 午餐选择</button>
+      <button class="preset-btn" data-preset="numbers">🔢 随机数字</button>
+      <button class="preset-btn" data-preset="tasks">📋 团队任务</button>
+      <button class="preset-btn" data-preset="prizes">🎁 奖品抽奖</button>
+      <button class="preset-btn" data-preset="names">👥 随机点名</button>
+    </div>
+
+    <div class="control-row">
+      <div>
+        <label>🎯 抽中数量</label>
+        <div class="num-input">
+          <button class="num-btn" id="minus">−</button>
+          <input type="number" id="winners" value="1" min="1" max="999">
+          <button class="num-btn" id="plus">+</button>
+        </div>
+      </div>
+      <div>
+        <label>♻️ 重复模式</label>
+        <label class="checkbox-wrap">
+          <input type="checkbox" id="dup">
+          <span>允许重复抽中</span>
+        </label>
+      </div>
+    </div>
+  </div>
+
+  <!-- 效果选择 -->
+  <div class="panel">
+    <div class="panel-title">✨ 选择动态效果</div>
+    <div class="effect-grid" id="effects">
+      <div class="effect-card selected" data-effect="wheel">
+        <span class="effect-icon">🎡</span>
+        <span class="effect-name">幸运转盘</span>
+      </div>
+      <div class="effect-card" data-effect="slot">
+        <span class="effect-icon">🎰</span>
+        <span class="effect-name">老虎机</span>
+      </div>
+      <div class="effect-card" data-effect="bucket">
+        <span class="effect-icon">🪣</span>
+        <span class="effect-name">抽签桶</span>
+      </div>
+      <div class="effect-card" data-effect="flash">
+        <span class="effect-icon">🌟</span>
+        <span class="effect-name">文字闪烁</span>
+      </div>
+      <div class="effect-card" data-effect="card">
+        <span class="effect-icon">🃏</span>
+        <span class="effect-name">翻牌抽奖</span>
+      </div>
+      <div class="effect-card" data-effect="box">
+        <span class="effect-icon">🎁</span>
+        <span class="effect-name">盲盒开启</span>
+      </div>
+      <div class="effect-card" data-effect="vortex">
+        <span class="effect-icon">🌀</span>
+        <span class="effect-name">漩涡吸入</span>
+      </div>
+      <div class="effect-card" data-effect="firework">
+        <span class="effect-icon">🎆</span>
+        <span class="effect-name">烟花绽放</span>
+      </div>
+      <div class="effect-card" data-effect="balloon">
+        <span class="effect-icon">🎈</span>
+        <span class="effect-name">气球升空</span>
+      </div>
+      <div class="effect-card" data-effect="crystal">
+        <span class="effect-icon">🔮</span>
+        <span class="effect-name">水晶球</span>
+      </div>
+      <div class="effect-card" data-effect="lightning">
+        <span class="effect-icon">⚡</span>
+        <span class="effect-name">闪电链击</span>
+      </div>
+      <div class="effect-card" data-effect="target">
+        <span class="effect-icon">🎯</span>
+        <span class="effect-name">靶心锁定</span>
+      </div>
+      <div class="effect-card" data-effect="wave">
+        <span class="effect-icon">🌊</span>
+        <span class="effect-name">波浪涌动</span>
+      </div>
+      <div class="effect-card" data-effect="meteor">
+        <span class="effect-icon">🌠</span>
+        <span class="effect-name">流星雨</span>
+      </div>
+      <div class="effect-card" data-effect="film">
+        <span class="effect-icon">🎬</span>
+        <span class="effect-name">胶片定格</span>
+      </div>
+      <div class="effect-card" data-effect="candy">
+        <span class="effect-icon">🍬</span>
+        <span class="effect-name">糖果机</span>
+      </div>
+      <div class="effect-card" data-effect="tarot">
+        <span class="effect-icon">🎴</span>
+        <span class="effect-name">塔罗占卜</span>
+      </div>
+      <div class="effect-card" data-effect="random">
+        <span class="effect-icon">🎲</span>
+        <span class="effect-name">随机动效</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- 舞台 -->
+  <div class="panel stage-panel">
+    <div class="round-indicator" id="roundIndicator"></div>
+    <div class="stage" id="stage">
+      <div class="stage-empty" id="stageEmpty">
+        <div class="icon">🎲</div>
+        <div class="text">选择效果，点击下方按钮开始抽签</div>
+      </div>
+    </div>
+  </div>
+
+  <button class="draw-btn" id="drawBtn">🎲 开始抽签</button>
+
+  <!-- 结果 -->
+  <div class="panel results" id="results" style="display:none;">
+    <div class="results-title">🎉 抽签结果</div>
+    <div class="results-items" id="resultsItems"></div>
+    <div class="results-actions">
+      <button class="action-btn" id="copyBtn">📋 复制结果</button>
+      <button class="action-btn" id="againBtn">🔄 再抽一次</button>
+      <button class="action-btn" id="clearBtn">🗑️ 清空内容</button>
+    </div>
+  </div>
+
+  <!-- 历史 -->
+  <div class="panel" id="historyPanel" style="display:none;">
+    <div class="panel-title">📜 历史记录</div>
+    <div class="history-list" id="historyList"></div>
+  </div>
+
+  <footer>
+    <p>🎲 动态抽签系统 &mdash; 单文件部署，开箱即用</p>
+  </footer>
+</div>
+
+<div class="toast" id="toast" style="display:none;"></div>
+
+<script>
+(function(){
+'use strict';
+
+/* ===== DOM 引用 ===== */
+var $=function(id){return document.getElementById(id);};
+var itemsT=$('items'),winnersI=$('winners'),dupC=$('dup');
+var drawBtn=$('drawBtn'),stage=$('stage'),stageEmpty=$('stageEmpty');
+var roundInd=$('roundIndicator'),resultsP=$('results'),resultsItems=$('resultsItems');
+var historyP=$('historyPanel'),historyL=$('historyList'),toastEl=$('toast');
+
+/* ===== 状态 ===== */
+var currentEffect='wheel';
+var isDrawing=false;
+var history=[];
+
+/* ===== 预设 ===== */
+var presets={
+  lunch:['汉堡','披萨','寿司','面条','沙拉','炒饭','麻辣烫','烤肉','饺子','煎饼'],
+  numbers:['1','2','3','4','5','6','7','8','9','10','11','12'],
+  tasks:['整理文档','预订会议室','买下午茶','写周报','整理工位','订外卖','取快递','调试设备'],
+  prizes:['一等奖','二等奖','三等奖','幸运奖','参与奖','安慰奖','神秘大奖'],
+  names:['张三','李四','王五','赵六','钱七','孙八','周九','吴十','郑十一','王十二']
+};
+
+/* ===== 工具函数 ===== */
+function parseItems(text){
+  return text.split(/[\n,，、;；]/).map(function(s){return s.trim();}).filter(Boolean);
+}
+function showToast(msg){
+  toastEl.textContent=msg;toastEl.style.display='block';
+  clearTimeout(toastEl._t);
+  toastEl._t=setTimeout(function(){toastEl.style.display='none';},2500);
+}
+function sleep(ms){return new Promise(function(r){setTimeout(r,ms);});}
+function rand(n){return Math.floor(Math.random()*n);}
+function pickSubset(arr,max){
+  if(arr.length<=max)return arr.slice();
+  var c=arr.slice(),r=[];
+  for(var i=0;i<max;i++){r.push(c.splice(rand(c.length),1)[0]);}
+  return r;
+}
+function easeOutQuart(t){return 1-Math.pow(1-t,4);}
+
+/* 通用：在舞台中央叠加最终结果大块（金边高亮，浮在最上层） */
+function appendFinalWinner(parent,winner){
+  var d=document.createElement('div');
+  d.className='final-winner';
+  d.style.position='absolute';
+  d.style.left='50%';
+  d.style.top='50%';
+  d.style.transform='translate(-50%,-50%)';
+  d.style.zIndex='50';
+  d.style.marginTop='0';
+  var e=document.createElement('span');e.style.fontSize='.7em';e.textContent='🎉';
+  var t=document.createElement('span');t.textContent=winner;
+  d.appendChild(e);d.appendChild(t);
+  parent.appendChild(d);
+}
+
+function createConfetti(){
+  var colors=['#e94560','#f5a623','#00d4ff','#00f5a0','#ff6b9d','#ffd700','#7b2ff7','#4ecdc4'];
+  for(var i=0;i<60;i++){
+    (function(){
+      var c=document.createElement('div');c.className='confetti';
+      c.style.left=Math.random()*100+'%';
+      c.style.background=colors[rand(colors.length)];
+      c.style.animationDelay=Math.random()*0.5+'s';
+      c.style.animationDuration=(1.5+Math.random()*1.5)+'s';
+      var sz=6+Math.random()*8;c.style.width=sz+'px';c.style.height=sz+'px';
+      if(Math.random()>0.5)c.style.borderRadius='50%';
+      document.body.appendChild(c);
+      setTimeout(function(){c.remove();},3500);
+    })();
+  }
+}
+
+function clearStage(){stage.innerHTML='';}
+function showStageEmpty(){
+  stage.innerHTML='<div class="stage-empty"><div class="icon">🎲</div><div class="text">选择效果，点击下方按钮开始抽签</div></div>';
+}
+
+/* ===== 效果1: 幸运转盘 ===== */
+function wheelEffect(items,resolve){
+  var wrapper=document.createElement('div');wrapper.className='wheel-wrapper';
+  var canvas=document.createElement('canvas');
+  var size=Math.min(380,Math.max(260,stage.clientWidth-40));
+  canvas.width=canvas.height=size;
+  var hint=document.createElement('div');hint.className='wheel-hint';hint.textContent='转动中...';
+  wrapper.appendChild(canvas);wrapper.appendChild(hint);
+  stage.appendChild(wrapper);
+
+  var ctx=canvas.getContext('2d');
+  var cx=size/2,cy=size/2,radius=size/2-12;
+  var n=items.length,segAngle=2*Math.PI/n;
+  var colors=['#e94560','#0f3460','#f5a623','#00d4ff','#7b2ff7','#00f5a0','#ff6b9d','#ffd700','#4ecdc4','#ff8a5c','#a78bfa','#34d399'];
+
+  var winIdx=rand(n),winner=items[winIdx];
+  var turns=5+rand(2);
+  // 指针在顶部(-π/2)，要让 winIdx 段中心转到那里
+  var target=-Math.PI/2-winIdx*segAngle-segAngle/2+2*Math.PI*turns;
+
+  function draw(rot){
+    ctx.clearRect(0,0,size,size);
+    for(var i=0;i<n;i++){
+      var sa=i*segAngle+rot,ea=sa+segAngle;
+      ctx.beginPath();ctx.moveTo(cx,cy);ctx.arc(cx,cy,radius,sa,ea);ctx.closePath();
+      ctx.fillStyle=colors[i%colors.length];ctx.fill();
+      ctx.strokeStyle='rgba(255,255,255,.15)';ctx.lineWidth=1;ctx.stroke();
+      // 文字
+      ctx.save();ctx.translate(cx,cy);ctx.rotate(sa+segAngle/2);ctx.textAlign='right';
+      ctx.fillStyle='#fff';var fs=Math.max(9,Math.min(18,220/n));
+      ctx.font='bold '+fs+'px sans-serif';
+      var txt=items[i];if(txt.length>Math.max(4,Math.floor(120/n)))txt=txt.slice(0,Math.max(3,Math.floor(100/n)))+'…';
+      ctx.fillText(txt,radius-12,fs/3);ctx.restore();
+    }
+    // 中心
+    ctx.beginPath();ctx.arc(cx,cy,22,0,2*Math.PI);ctx.fillStyle='#fff';ctx.fill();
+    ctx.strokeStyle='rgba(0,0,0,.1)';ctx.lineWidth=2;ctx.stroke();
+    ctx.beginPath();ctx.arc(cx,cy,10,0,2*Math.PI);ctx.fillStyle=colors[winIdx%colors.length];ctx.fill();
+    // 指针
+    ctx.beginPath();ctx.moveTo(cx,cy-radius+2);ctx.lineTo(cx-13,cy-radius-22);ctx.lineTo(cx+13,cy-radius-22);
+    ctx.closePath();ctx.fillStyle='#ffd700';ctx.fill();
+    ctx.strokeStyle='#fff';ctx.lineWidth=2;ctx.stroke();
+  }
+
+  var duration=4200,t0=performance.now();
+  function frame(now){
+    var t=Math.min((now-t0)/duration,1),e=easeOutQuart(t);
+    draw(target*e);
+    if(t<1)requestAnimationFrame(frame);
+    else{
+      hint.style.display='none';
+      appendFinalWinner(stage,winner);
+      setTimeout(function(){resolve(winner);},900);
+    }
+  }
+  requestAnimationFrame(frame);
+}
+
+/* ===== 效果2: 老虎机 ===== */
+function slotEffect(items,resolve){
+  var wrap=document.createElement('div');wrap.style.cssText='display:flex;flex-direction:column;align-items:center;';
+  var machine=document.createElement('div');machine.className='slot-machine';
+  var reel=document.createElement('div');reel.className='slot-reel';
+  var indicator=document.createElement('div');indicator.className='slot-indicator';
+
+  var itemH=80,containerH=220,repeats=20;
+  for(var r=0;r<repeats;r++){
+    items.forEach(function(item){
+      var d=document.createElement('div');d.className='slot-item';d.textContent=item;reel.appendChild(d);
+    });
+  }
+  machine.appendChild(reel);machine.appendChild(indicator);
+  wrap.appendChild(machine);
+
+  var display=document.createElement('div');display.className='final-winner';display.style.opacity='0';
+  wrap.appendChild(display);
+  stage.appendChild(wrap);
+
+  var winIdx=rand(items.length),winner=items[winIdx];
+  var targetRepeat=repeats-2;
+  var targetIdx=targetRepeat*items.length+winIdx;
+  var targetY=-(targetIdx*itemH+itemH/2-containerH/2);
+
+  reel.style.transform='translateY(0px)';
+  reel.style.filter='blur(5px)';
+
+  setTimeout(function(){
+    reel.style.transition='transform 3.2s cubic-bezier(.15,.8,.25,1), filter 2.8s ease-out';
+    reel.style.transform='translateY('+targetY+'px)';
+    reel.style.filter='blur(0px)';
+  },80);
+
+  setTimeout(function(){
+    display.innerHTML='';
+    var e=document.createElement('span');e.style.fontSize='.7em';e.textContent='🎉';
+    var t=document.createElement('span');t.textContent=winner;
+    display.appendChild(e);display.appendChild(t);
+    display.style.opacity='1';
+    setTimeout(function(){resolve(winner);},900);
+  },3400);
+}
+
+/* ===== 效果3: 抽签桶 ===== */
+function bucketEffect(items,resolve){
+  var bs=document.createElement('div');bs.className='bucket-stage';
+
+  var bucket=document.createElement('div');bucket.className='bucket';
+  var sticks=document.createElement('div');sticks.className='bucket-sticks';
+  var sColors=['#e94560','#f5a623','#00d4ff','#00f5a0','#ff6b9d','#ffd700','#7b2ff7','#4ecdc4'];
+  var numSticks=Math.min(items.length,10);
+  for(var i=0;i<numSticks;i++){
+    var s=document.createElement('div');s.className='stick';
+    s.style.setProperty('--rot',((i-numSticks/2+0.5)*7)+'deg');
+    s.style.setProperty('--color',sColors[i%sColors.length]);
+    sticks.appendChild(s);
+  }
+  var rim=document.createElement('div');rim.className='bucket-rim';
+  var body=document.createElement('div');body.className='bucket-body';
+  bucket.appendChild(sticks);bucket.appendChild(rim);bucket.appendChild(body);
+
+  var slip=document.createElement('div');slip.className='fortune-slip';
+
+  bs.appendChild(bucket);bs.appendChild(slip);
+  stage.appendChild(bs);
+
+  var winner=items[rand(items.length)];
+
+  bucket.classList.add('shaking');
+  setTimeout(function(){
+    bucket.classList.remove('shaking');
+    slip.textContent=winner;
+    slip.classList.add('show');
+    appendFinalWinner(stage,winner);
+    setTimeout(function(){resolve(winner);},1300);
+  },2000);
+}
+
+/* ===== 效果4: 文字闪烁 ===== */
+function flashEffect(items,resolve){
+  var container=document.createElement('div');container.className='flash-container';
+  var tags=[];
+  items.forEach(function(item,i){
+    var t=document.createElement('div');t.className='flash-tag';t.textContent=item;t.dataset.idx=i;
+    container.appendChild(t);tags.push(t);
+  });
+  stage.appendChild(container);
+
+  var winIdx=rand(items.length),winner=items[winIdx];
+  var interval=60,totalTime=3200,elapsed=0,last=-1;
+
+  function highlight(){
+    if(last>=0)tags[last].classList.remove('active');
+    var idx;
+    do{idx=rand(items.length);}while(idx===last&&items.length>1);
+    tags[idx].classList.add('active');last=idx;
+    elapsed+=interval;
+    interval=60+Math.pow(elapsed/totalTime,2.2)*350;
+    if(elapsed<totalTime)setTimeout(highlight,interval);
+    else{
+      if(last>=0)tags[last].classList.remove('active');
+      tags[winIdx].classList.add('winner');
+      appendFinalWinner(stage,winner);
+      setTimeout(function(){resolve(winner);},1000);
+    }
+  }
+  setTimeout(highlight,250);
+}
+
+/* ===== 效果5: 翻牌 ===== */
+function cardEffect(items,resolve){
+  var displayItems=pickSubset(items,12);
+  var winIdx=rand(displayItems.length),winner=displayItems[winIdx];
+
+  var container=document.createElement('div');container.className='card-container';
+  var cards=[];
+  displayItems.forEach(function(item,i){
+    var card=document.createElement('div');card.className='card';
+    card.innerHTML='<div class="card-inner"><div class="card-front"></div><div class="card-back">'+item+'</div></div>';
+    container.appendChild(card);cards.push(card);
+  });
+
+  if(items.length>12){
+    var note=document.createElement('div');note.className='card-note';
+    note.textContent='从 '+items.length+' 个选项中随机展示 12 张';
+    container.appendChild(note);
+  }
+
+  stage.appendChild(container);
+  container.classList.add('shuffling');
+
+  setTimeout(function(){
+    container.classList.remove('shuffling');
+    cards[winIdx].classList.add('flipped','winner-card');
+    cards.forEach(function(c,i){if(i!==winIdx)c.classList.add('dimmed');});
+    appendFinalWinner(stage,winner);
+    setTimeout(function(){resolve(winner);},1100);
+  },2000);
+}
+
+/* ===== 效果6: 盲盒 ===== */
+function boxEffect(items,resolve){
+  var displayItems=pickSubset(items,9);
+  var winIdx=rand(displayItems.length),winner=displayItems[winIdx];
+
+  var container=document.createElement('div');container.className='box-container';
+  var boxes=[];
+  displayItems.forEach(function(item,i){
+    var box=document.createElement('div');box.className='gift-box';
+    box.innerHTML='<div class="box-glow"></div><div class="box-body"><div class="box-content">'+item+'</div></div><div class="box-lid"></div>';
+    container.appendChild(box);boxes.push(box);
+  });
+
+  if(items.length>9){
+    var note=document.createElement('div');note.className='card-note';
+    note.textContent='从 '+items.length+' 个选项中随机展示 9 个';
+    container.appendChild(note);
+  }
+
+  stage.appendChild(container);
+  container.classList.add('shaking');
+
+  setTimeout(function(){
+    container.classList.remove('shaking');
+    boxes[winIdx].classList.add('opened');
+    boxes.forEach(function(b,i){if(i!==winIdx)b.classList.add('dimmed');});
+    appendFinalWinner(stage,winner);
+    setTimeout(function(){resolve(winner);},1500);
+  },2000);
+}
+
+/* ===== 效果7: 漩涡吸入 ===== */
+function vortexEffect(items,resolve){
+  var wrap=document.createElement('div');wrap.className='vortex-wrap';
+  var canvas=document.createElement('canvas');
+  var size=Math.min(400,Math.max(280,stage.clientWidth-40));
+  canvas.width=canvas.height=size;
+  wrap.appendChild(canvas);stage.appendChild(wrap);
+  var ctx=canvas.getContext('2d');
+  var cx=size/2,cy=size/2;
+  var winIdx=rand(items.length),winner=items[winIdx];
+  var colors=['#e94560','#f5a623','#00d4ff','#00f5a0','#ff6b9d','#ffd700','#7b2ff7','#4ecdc4'];
+  var particles=items.map(function(item,i){
+    var angle=(i/items.length)*Math.PI*2-Math.PI/2;
+    var radius=Math.min(size/2-30,140);
+    return{text:item,angle:angle,radius:radius,initRadius:radius,opacity:1,isWinner:i===winIdx};
+  });
+  var duration=3800,t0=performance.now();
+  function frame(now){
+    var t=Math.min((now-t0)/duration,1),e=easeOutQuart(t);
+    ctx.clearRect(0,0,size,size);
+    // 漩涡背景
+    var grad=ctx.createRadialGradient(cx,cy,0,cx,cy,size/2);
+    grad.addColorStop(0,'rgba(123,47,247,'+(0.15+e*0.2)+')');
+    grad.addColorStop(0.5,'rgba(233,69,96,'+(0.05+e*0.1)+')');
+    grad.addColorStop(1,'rgba(0,0,0,0)');
+    ctx.fillStyle=grad;ctx.fillRect(0,0,size,size);
+    // 螺旋线
+    ctx.save();ctx.translate(cx,cy);ctx.rotate(e*Math.PI*4);
+    for(var s=0;s<3;s++){
+      ctx.beginPath();
+      for(var r=0;r<size/2;r+=3){
+        var a=r*0.05+s*(Math.PI*2/3);
+        var px=Math.cos(a)*r*(1-e*0.3),py=Math.sin(a)*r*(1-e*0.3);
+        if(r===0)ctx.moveTo(px,py);else ctx.lineTo(px,py);
+      }
+      ctx.strokeStyle='rgba(255,255,255,'+(0.05*(1-e*0.5))+')';ctx.lineWidth=1;ctx.stroke();
+    }
+    ctx.restore();
+    // 粒子
+    particles.forEach(function(p,i){
+      p.angle+=0.025+e*0.18;
+      p.radius=Math.max(0,p.initRadius*(1-e*0.95));
+      if(!p.isWinner&&t>0.55)p.opacity=Math.max(0,1-(t-0.55)/0.35);
+      var x=cx+Math.cos(p.angle)*p.radius;
+      var y=cy+Math.sin(p.angle)*p.radius;
+      ctx.save();ctx.globalAlpha=p.opacity;
+      ctx.font='bold 15px sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';
+      ctx.fillStyle=colors[i%colors.length];
+      ctx.shadowColor=colors[i%colors.length];ctx.shadowBlur=8;
+      var txt=p.text;if(txt.length>8)txt=txt.slice(0,7)+'…';
+      ctx.fillText(txt,x,y);ctx.restore();
+    });
+    // 赢家浮现
+    if(t>0.88){
+      var wt=(t-0.88)/0.12;
+      ctx.save();ctx.globalAlpha=wt;
+      ctx.font='bold '+(20+wt*16)+'px sans-serif';
+      ctx.textAlign='center';ctx.textBaseline='middle';
+      ctx.fillStyle='#ffd700';ctx.shadowColor='rgba(255,215,0,0.8)';ctx.shadowBlur=25;
+      var dw=winner;if(dw.length>12)dw=dw.slice(0,11)+'…';
+      ctx.fillText(dw,cx,cy);ctx.restore();
+    }
+    if(t<1)requestAnimationFrame(frame);
+    else{appendFinalWinner(stage,winner);setTimeout(function(){resolve(winner);},900);}
+  }
+  requestAnimationFrame(frame);
+}
+
+/* ===== 效果8: 烟花绽放 ===== */
+function fireworkEffect(items,resolve){
+  var wrap=document.createElement('div');wrap.className='firework-wrap';
+  var canvas=document.createElement('canvas');
+  var w=Math.min(500,Math.max(300,stage.clientWidth-20)),h=380;
+  canvas.width=w;canvas.height=h;
+  wrap.appendChild(canvas);stage.appendChild(wrap);
+  var ctx=canvas.getContext('2d');
+  var winIdx=rand(items.length),winner=items[winIdx];
+  var colors=['#e94560','#f5a623','#00d4ff','#00f5a0','#ff6b9d','#ffd700','#7b2ff7','#4ecdc4'];
+  // 项目位置
+  var cols=Math.ceil(Math.sqrt(items.length));
+  var rows=Math.ceil(items.length/cols);
+  var itemPos=items.map(function(item,i){
+    var c=i%cols,r=Math.floor(i/cols);
+    return{text:item,x:(c+0.5)/cols*w,y:(r+0.5)/rows*(h*0.6)+40,opacity:1};
+  });
+  var rocket=null,particles=[],phase=0,phaseT=performance.now();
+  function frame(){
+    var now=performance.now(),elapsed=now-phaseT;
+    if(phase===0){
+      ctx.clearRect(0,0,w,h);
+      itemPos.forEach(function(p,i){
+        ctx.save();ctx.globalAlpha=p.opacity;
+        ctx.font='bold 14px sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';
+        ctx.fillStyle=colors[i%colors.length];ctx.shadowColor=colors[i%colors.length];ctx.shadowBlur=6;
+        var txt=p.text;if(txt.length>10)txt=txt.slice(0,9)+'…';
+        ctx.fillText(txt,p.x,p.y);ctx.restore();
+      });
+      if(elapsed>1200){phase=1;phaseT=now;rocket={x:w/2,y:h,vy:-9,targetY:h*0.3};}
+    }else if(phase===1){
+      ctx.fillStyle='rgba(15,12,41,0.2)';ctx.fillRect(0,0,w,h);
+      itemPos.forEach(function(p){p.opacity=Math.max(0,p.opacity-0.05);
+        if(p.opacity>0){ctx.save();ctx.globalAlpha=p.opacity;
+          ctx.font='bold 14px sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';
+          ctx.fillStyle='#666';var t=p.text;if(t.length>10)t=t.slice(0,9)+'…';
+          ctx.fillText(t,p.x,p.y);ctx.restore();}
+      });
+      rocket.y+=rocket.vy;rocket.vy+=0.18;
+      ctx.save();
+      for(var tr=0;tr<8;tr++){
+        ctx.beginPath();ctx.arc(rocket.x,rocket.y+tr*6,4-tr*0.4,0,Math.PI*2);
+        ctx.fillStyle='rgba(255,215,0,'+(0.7-tr*0.08)+')';ctx.fill();
+      }
+      ctx.beginPath();ctx.arc(rocket.x,rocket.y,5,0,Math.PI*2);
+      ctx.fillStyle='#ffd700';ctx.shadowColor='#ffd700';ctx.shadowBlur=15;ctx.fill();
+      ctx.restore();
+      if(rocket.y<=rocket.targetY||rocket.vy>=0){
+        phase=2;phaseT=now;
+        var bc=colors[winIdx%colors.length];
+        for(var p=0;p<70;p++){
+          var a=(p/70)*Math.PI*2,sp=2+Math.random()*5;
+          particles.push({x:rocket.x,y:rocket.y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,
+            life:1,color:Math.random()>0.5?bc:'#ffd700',size:2+Math.random()*3});
+        }
+      }
+    }else if(phase===2){
+      ctx.fillStyle='rgba(15,12,41,0.18)';ctx.fillRect(0,0,w,h);
+      particles.forEach(function(p){
+        p.x+=p.vx;p.y+=p.vy;p.vy+=0.08;p.vx*=0.99;p.vy*=0.99;p.life-=0.016;
+        if(p.life>0){ctx.save();ctx.globalAlpha=p.life;
+          ctx.beginPath();ctx.arc(p.x,p.y,p.size*p.life,0,Math.PI*2);
+          ctx.fillStyle=p.color;ctx.shadowColor=p.color;ctx.shadowBlur=10;ctx.fill();ctx.restore();}
+      });
+      particles=particles.filter(function(p){return p.life>0;});
+      if(elapsed>800){phase=3;phaseT=now;}
+    }else{
+      ctx.fillStyle='rgba(15,12,41,0.2)';ctx.fillRect(0,0,w,h);
+      particles.forEach(function(p){
+        p.x+=p.vx;p.y+=p.vy;p.vy+=0.08;p.vx*=0.99;p.vy*=0.99;p.life-=0.02;
+        if(p.life>0){ctx.save();ctx.globalAlpha=p.life;
+          ctx.beginPath();ctx.arc(p.x,p.y,p.size*p.life,0,Math.PI*2);
+          ctx.fillStyle=p.color;ctx.shadowColor=p.color;ctx.shadowBlur=8;ctx.fill();ctx.restore();}
+      });
+      var wt=Math.min(elapsed/500,1);
+      ctx.save();ctx.globalAlpha=wt;
+      ctx.font='bold '+(20+wt*18)+'px sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';
+      ctx.fillStyle='#ffd700';ctx.shadowColor='rgba(255,215,0,0.8)';ctx.shadowBlur=25;
+      var dw=winner;if(dw.length>14)dw=dw.slice(0,13)+'…';
+      ctx.fillText('🎉 '+dw,w/2,h*0.35);ctx.restore();
+      if(elapsed>1200){appendFinalWinner(stage,winner);setTimeout(function(){resolve(winner);},500);return;}
+    }
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+}
+
+/* ===== 效果9: 气球升空 ===== */
+function balloonEffect(items,resolve){
+  var container=document.createElement('div');container.className='balloon-container';
+  var displayItems=pickSubset(items,10);
+  var winIdx=rand(displayItems.length),winner=displayItems[winIdx];
+  var bColors=['#e94560','#f5a623','#00d4ff','#00f5a0','#ff6b9d','#ffd700','#7b2ff7','#4ecdc4','#ff8a5c','#a78bfa'];
+  var balloons=[];
+  displayItems.forEach(function(item,i){
+    var b=document.createElement('div');b.className='balloon';
+    b.style.setProperty('--bcolor',bColors[i%bColors.length]);
+    b.style.animationDelay=(i*0.15)+'s';
+    b.innerHTML='<div class="balloon-body"></div><div class="balloon-string"></div><div class="balloon-text">'+item+'</div>';
+    container.appendChild(b);
+    balloons.push({el:b,idx:i});
+  });
+  if(items.length>10){
+    var note=document.createElement('div');note.className='card-note';
+    note.style.width='100%';note.textContent='从 '+items.length+' 个选项中随机展示 10 个';
+    container.appendChild(note);
+  }
+  stage.appendChild(container);
+  // 逐个爆破（非赢家）
+  var popOrder=balloons.filter(function(b){return b.idx!==winIdx;}).sort(function(){return Math.random()-0.5;});
+  var pi=0;
+  function popNext(){
+    if(pi<popOrder.length){
+      popOrder[pi].el.classList.add('popped');
+      pi++;setTimeout(popNext,350+Math.random()*300);
+    }else{
+      setTimeout(function(){
+        balloons[winIdx].el.classList.add('winner-pop');
+        appendFinalWinner(stage,winner);
+        setTimeout(function(){resolve(winner);},1200);
+      },500);
+    }
+  }
+  setTimeout(popNext,2000);
+}
+
+/* ===== 效果10: 水晶球 ===== */
+function crystalEffect(items,resolve){
+  var wrap=document.createElement('div');wrap.className='crystal-wrap';
+  wrap.innerHTML=
+    '<div class="crystal-ball">'+
+      '<canvas class="crystal-canvas" width="200" height="200"></canvas>'+
+      '<div class="crystal-shine"></div>'+
+      '<div class="crystal-text"></div>'+
+    '</div>'+
+    '<div class="crystal-stand"></div>'+
+    '<div class="crystal-hint">🔮 占卜中...</div>';
+  stage.appendChild(wrap);
+  var canvas=wrap.querySelector('.crystal-canvas');
+  var ctx=canvas.getContext('2d');
+  var textEl=wrap.querySelector('.crystal-text');
+  var hintEl=wrap.querySelector('.crystal-hint');
+  var winIdx=rand(items.length),winner=items[winIdx];
+  var cx=100,cy=100;
+  var mist=[];
+  for(var i=0;i<40;i++){
+    mist.push({x:cx+(Math.random()-0.5)*100,y:cy+(Math.random()-0.5)*100,
+      r:15+Math.random()*25,vx:(Math.random()-0.5)*0.5,vy:(Math.random()-0.5)*0.5,
+      hue:260+Math.random()*60,alpha:0.3+Math.random()*0.4});
+  }
+  var colors=['#7b2ff7','#e94560','#00d4ff','#f5a623','#00f5a0','#ff6b9d'];
+  var duration=3500,t0=performance.now();
+  function frame(now){
+    var t=Math.min((now-t0)/duration,1),e=easeOutQuart(t);
+    ctx.clearRect(0,0,200,200);
+    ctx.save();
+    ctx.beginPath();ctx.arc(cx,cy,95,0,Math.PI*2);ctx.clip();
+    var bg=ctx.createRadialGradient(cx,cy,0,cx,cy,95);
+    bg.addColorStop(0,'rgba(123,47,247,0.3)');bg.addColorStop(1,'rgba(15,12,41,0.5)');
+    ctx.fillStyle=bg;ctx.fillRect(0,0,200,200);
+    mist.forEach(function(p){
+      p.x+=p.vx*(1+e*2);p.y+=p.vy*(1+e*2);
+      var dx=p.x-cx,dy=p.y-cy,dist=Math.sqrt(dx*dx+dy*dy);
+      if(dist>80){p.vx=-p.vx;p.vy=-p.vy;p.x=cx+dx/dist*80;p.y=cy+dy/dist*80;}
+      var al=p.alpha*(1-e*0.7);
+      var g=ctx.createRadialGradient(p.x,p.y,0,p.x,p.y,p.r);
+      g.addColorStop(0,'hsla('+p.hue+',80%,60%,'+al+')');
+      g.addColorStop(1,'hsla('+p.hue+',80%,60%,0)');
+      ctx.fillStyle=g;ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,Math.PI*2);ctx.fill();
+    });
+    if(t<0.85){
+      var fi=Math.floor(now/80)%items.length;
+      ctx.font='bold 14px sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';
+      ctx.globalAlpha=0.4;ctx.fillStyle=colors[fi%colors.length];
+      var ft=items[fi];if(ft.length>10)ft=ft.slice(0,9)+'…';
+      ctx.fillText(ft,cx,cy);ctx.globalAlpha=1;
+    }
+    ctx.restore();
+    if(t>0.85){
+      var wt=(t-0.85)/0.15;
+      ctx.save();ctx.beginPath();ctx.arc(cx,cy,95,0,Math.PI*2);ctx.clip();
+      ctx.globalAlpha=wt;ctx.font='bold '+(14+wt*8)+'px sans-serif';
+      ctx.textAlign='center';ctx.textBaseline='middle';
+      ctx.fillStyle='#ffd700';ctx.shadowColor='rgba(255,215,0,0.8)';ctx.shadowBlur=15;
+      var dw=winner;if(dw.length>10)dw=dw.slice(0,9)+'…';
+      ctx.fillText(dw,cx,cy);ctx.restore();
+      if(t>0.95){textEl.textContent='🎉 '+winner;textEl.classList.add('show');hintEl.textContent='🔮 占卜完成！';}
+    }
+    if(t<1)requestAnimationFrame(frame);
+    else{appendFinalWinner(stage,winner);setTimeout(function(){resolve(winner);},1000);}
+  }
+  requestAnimationFrame(frame);
+}
+
+/* ===== 效果11: 闪电链击 ===== */
+function lightningEffect(items,resolve){
+  var wrap=document.createElement('div');wrap.className='lightning-wrap';
+  var displayItems=pickSubset(items,10);
+  var winIdx=rand(displayItems.length),winner=displayItems[winIdx];
+  var grid=document.createElement('div');grid.className='lightning-grid';
+  var nodes=[];
+  displayItems.forEach(function(item,i){
+    var n=document.createElement('div');n.className='lightning-node';n.textContent=item;n.dataset.idx=i;
+    grid.appendChild(n);nodes.push(n);
+  });
+  if(items.length>10){
+    var note=document.createElement('div');note.className='card-note';note.style.width='100%';
+    note.textContent='从 '+items.length+' 个选项中随机展示 10 个';
+    grid.appendChild(note);
+  }
+  var svg=document.createElementNS('http://www.w3.org/2000/svg','svg');
+  svg.setAttribute('class','lightning-svg');
+  wrap.appendChild(grid);wrap.appendChild(svg);
+  stage.appendChild(wrap);
+  function drawBolt(x1,y1,x2,y2){
+    var path=document.createElementNS('http://www.w3.org/2000/svg','path');
+    var d='M '+x1+' '+y1;var segs=6;
+    for(var i=1;i<=segs;i++){
+      var t=i/segs;var x=x1+(x2-x1)*t+(Math.random()-0.5)*30;
+      var y=y1+(y2-y1)*t+(Math.random()-0.5)*20;
+      if(i===segs){x=x2;y=y2;}
+      d+=' L '+x+' '+y;
+    }
+    path.setAttribute('d',d);
+    var glow=path.cloneNode();glow.setAttribute('class','lightning-bolt-glow');
+    path.setAttribute('class','lightning-bolt');
+    svg.appendChild(glow);svg.appendChild(path);
+  }
+  var jc=0,maxJ=15,interval=150;
+  function jump(){
+    svg.innerHTML='';
+    nodes.forEach(function(n){n.classList.remove('electrified');});
+    if(jc>=maxJ){
+      var wn=nodes[winIdx],wr=wn.getBoundingClientRect(),wpr=wrap.getBoundingClientRect();
+      var x=wr.left+wr.width/2-wpr.left,y=wr.top+wr.height/2-wpr.top;
+      drawBolt(wrap.clientWidth/2,0,x,y);
+      wn.classList.add('winner-node');
+      appendFinalWinner(stage,winner);
+      setTimeout(function(){resolve(winner);},1200);return;
+    }
+    var from=rand(nodes.length),to;do{to=rand(nodes.length);}while(to===from);
+    var r1=nodes[from].getBoundingClientRect(),r2=nodes[to].getBoundingClientRect();
+    var wr=wrap.getBoundingClientRect();
+    drawBolt(r1.left+r1.width/2-wr.left,r1.top+r1.height/2-wr.top,
+             r2.left+r2.width/2-wr.left,r2.top+r2.height/2-wr.top);
+    nodes[from].classList.add('electrified');nodes[to].classList.add('electrified');
+    jc++;interval=150+Math.pow(jc/maxJ,2)*300;
+    setTimeout(jump,interval);
+  }
+  setTimeout(jump,300);
+}
+
+/* ===== 效果12: 靶心锁定 ===== */
+function targetEffect(items,resolve){
+  var container=document.createElement('div');container.className='target-container';
+  var displayItems=pickSubset(items,12);
+  var winIdx=rand(displayItems.length),winner=displayItems[winIdx];
+  var grid=document.createElement('div');grid.className='target-grid';
+  var nodes=[];
+  displayItems.forEach(function(item,i){
+    var n=document.createElement('div');n.className='target-item';n.textContent=item;
+    grid.appendChild(n);nodes.push(n);
+  });
+  if(items.length>12){
+    var note=document.createElement('div');note.className='card-note';note.style.width='100%';
+    note.textContent='从 '+items.length+' 个选项中随机展示 12 个';
+    grid.appendChild(note);
+  }
+  var crosshair=document.createElement('div');crosshair.className='crosshair';
+  crosshair.innerHTML='<div class="crosshair-circle"></div><div class="crosshair-line-h"></div><div class="crosshair-line-v"></div><div class="crosshair-dot"></div>';
+  container.appendChild(grid);container.appendChild(crosshair);
+  stage.appendChild(container);
+  var duration=3000,t0=performance.now(),lastIdx=-1,lastMove=0;
+  function move(){
+    var now=performance.now(),t=Math.min((now-t0)/duration,1);
+    var idx;
+    if(t<0.95){
+      var speed=50+Math.pow(1-t,3)*200;
+      if(now-lastMove>speed){
+        lastMove=now;do{idx=rand(nodes.length);}while(idx===lastIdx&&nodes.length>1);
+        lastIdx=idx;
+      }else idx=lastIdx;
+    }else idx=winIdx;
+    if(idx>=0&&nodes[idx]){
+      var nr=nodes[idx].getBoundingClientRect(),cr=container.getBoundingClientRect();
+      crosshair.style.left=(nr.left+nr.width/2-cr.left)+'px';
+      crosshair.style.top=(nr.top+nr.height/2-cr.top)+'px';
+      nodes.forEach(function(n){n.classList.remove('locked');});
+      nodes[idx].classList.add('locked');
+    }
+    if(t<1)requestAnimationFrame(move);
+    else{
+      nodes[winIdx].classList.remove('locked');
+      nodes[winIdx].classList.add('target-winner');
+      crosshair.classList.add('locked-on');
+      appendFinalWinner(stage,winner);
+      setTimeout(function(){resolve(winner);},1000);
+    }
+  }
+  setTimeout(function(){requestAnimationFrame(move);},100);
+}
+
+/* ===== 效果13: 波浪涌动 ===== */
+function waveEffect(items,resolve){
+  var canvas=document.createElement('canvas');
+  var w=Math.min(500,stage.clientWidth-40),h=340;
+  canvas.width=w;canvas.height=h;
+  stage.appendChild(canvas);
+  var ctx=canvas.getContext('2d');
+  var displayItems=pickSubset(items,8);
+  var winIdx=rand(displayItems.length),winner=displayItems[winIdx];
+  var waves=[
+    {amp:14,freq:0.014,phase:0},
+    {amp:20,freq:0.02,phase:1.8},
+    {amp:10,freq:0.03,phase:3.5}
+  ];
+  var duration=4000,t0=performance.now();
+  function frame(now){
+    var t=Math.min((now-t0)/duration,1);
+    var intensity=t<0.65?1+Math.sin(t*12)*0.4*(1-t*0.5):Math.max(0.3,1-(t-0.65)/0.35*0.7);
+    ctx.clearRect(0,0,w,h);
+    // layered waves
+    for(var wi=0;wi<waves.length;wi++){
+      var wv=waves[wi];wv.phase+=0.025+wi*0.01;
+      ctx.beginPath();ctx.moveTo(0,h);
+      for(var x=0;x<=w;x+=4){
+        var y=h*0.52+Math.sin(x*wv.freq+wv.phase)*wv.amp*intensity*(wi*0.5+0.5);
+        ctx.lineTo(x,y);
+      }
+      ctx.lineTo(w,h);ctx.closePath();
+      var grad=ctx.createLinearGradient(0,h*0.35,0,h);
+      grad.addColorStop(0,'rgba(0,150,220,'+(0.15+wi*0.12)+')');
+      grad.addColorStop(1,'rgba(0,50,100,'+(0.25+wi*0.18)+')');
+      ctx.fillStyle=grad;ctx.fill();
+    }
+    // items floating
+    displayItems.forEach(function(item,i){
+      var x=(i+0.5)/displayItems.length*w;
+      var y=h*0.52;
+      for(var wi=0;wi<waves.length;wi++){
+        y+=Math.sin(x*waves[wi].freq+waves[wi].phase)*waves[wi].amp*intensity*(wi*0.5+0.5);
+      }
+      y-=18;
+      if(t>=0.8&&i===winIdx){
+        var rise=(t-0.8)/0.2;
+        y-=rise*70;
+        ctx.font='bold '+(15+rise*7)+'px sans-serif';
+        ctx.fillStyle='rgba(255,215,0,'+Math.min(1,rise*1.5)+')';
+        ctx.shadowColor='#ffd700';ctx.shadowBlur=20*rise;
+      }else{
+        ctx.font='bold 13px sans-serif';
+        ctx.fillStyle='rgba(255,255,255,.55)';
+        ctx.shadowBlur=0;
+      }
+      ctx.textAlign='center';
+      var lbl=item.length>6?item.slice(0,6)+'…':item;
+      ctx.fillText(lbl,x,y);
+    });
+    ctx.shadowBlur=0;
+    if(t<1)requestAnimationFrame(frame);
+    else{appendFinalWinner(stage,winner);setTimeout(function(){resolve(winner);},1000);}
+  }
+  requestAnimationFrame(frame);
+}
+
+/* ===== 效果15: 流星雨 ===== */
+function meteorEffect(items,resolve){
+  var canvas=document.createElement('canvas');
+  var w=Math.min(500,stage.clientWidth-40),h=340;
+  canvas.width=w;canvas.height=h;
+  stage.appendChild(canvas);
+  var ctx=canvas.getContext('2d');
+  var displayItems=pickSubset(items,8);
+  var winIdx=rand(displayItems.length),winner=displayItems[winIdx];
+  var stars=[];
+  for(var i=0;i<60;i++){
+    stars.push({x:Math.random()*w,y:Math.random()*h*0.55,r:Math.random()*1.5,tw:Math.random()*6.28});
+  }
+  var meteors=[],spawnTimer=0,winnerSpawned=false;
+  var duration=4000,t0=performance.now();
+  function frame(now){
+    var t=Math.min((now-t0)/duration,1);
+    ctx.fillStyle='rgba(8,4,25,0.35)';ctx.fillRect(0,0,w,h);
+    // stars
+    stars.forEach(function(s){
+      s.tw+=0.04;
+      ctx.beginPath();ctx.arc(s.x,s.y,s.r,0,6.28);
+      ctx.fillStyle='rgba(255,255,255,'+(0.25+Math.sin(s.tw)*0.25)+')';
+      ctx.fill();
+    });
+    // spawn meteors
+    spawnTimer++;
+    if(spawnTimer>7&&t<0.75){spawnTimer=0;meteors.push({x:Math.random()*w,y:-15,vx:3+Math.random()*3,vy:4+Math.random()*4,trail:[],winner:false});}
+    if(t>0.68&&t<0.7&&!winnerSpawned){
+      winnerSpawned=true;
+      meteors.push({x:w*0.15,y:-15,vx:2.5,vy:3.5,trail:[],winner:true});
+    }
+    // update
+    meteors.forEach(function(m){
+      m.trail.push({x:m.x,y:m.y});
+      if(m.trail.length>16)m.trail.shift();
+      if(m.winner&&t>0.82){m.vx*=0.9;m.vy*=0.9;}
+      m.x+=m.vx;m.y+=m.vy;
+      // trail
+      m.trail.forEach(function(tp,i){
+        var a=(i/m.trail.length)*(m.winner?0.9:0.5);
+        ctx.beginPath();ctx.arc(tp.x,tp.y,(i/m.trail.length)*(m.winner?4:2.5),0,6.28);
+        ctx.fillStyle=m.winner?'rgba(255,215,0,'+a+')':'rgba(180,210,255,'+a+')';
+        ctx.fill();
+      });
+      // head
+      ctx.beginPath();ctx.arc(m.x,m.y,m.winner?5:2.5,0,6.28);
+      ctx.fillStyle=m.winner?'#ffd700':'#aaccff';
+      ctx.shadowColor=m.winner?'#ffd700':'#aaccff';
+      ctx.shadowBlur=m.winner?18:8;ctx.fill();ctx.shadowBlur=0;
+      // winner text
+      if(m.winner&&t>0.88){
+        var a=(t-0.88)/0.12;
+        ctx.font='bold 18px sans-serif';ctx.textAlign='center';
+        ctx.fillStyle='rgba(255,215,0,'+a+')';
+        ctx.shadowColor='#ffd700';ctx.shadowBlur=15;
+        ctx.fillText(winner,m.x,m.y-22);ctx.shadowBlur=0;
+      }
+    });
+    meteors=meteors.filter(function(m){return m.y<h+50;});
+    if(t<1)requestAnimationFrame(frame);
+    else{appendFinalWinner(stage,winner);setTimeout(function(){resolve(winner);},1000);}
+  }
+  requestAnimationFrame(frame);
+}
+
+/* ===== 效果20: 胶片定格 ===== */
+function filmEffect(items,resolve){
+  var displayItems=pickSubset(items,10);
+  var winIdx=rand(displayItems.length),winner=displayItems[winIdx];
+  var container=document.createElement('div');container.className='film-container';
+  stage.appendChild(container);
+  var strip=document.createElement('div');strip.className='film-strip';
+  var repeats=8,allFrames=[];
+  for(var r=0;r<repeats;r++){
+    displayItems.forEach(function(item,i){
+      allFrames.push({text:item,isW:r===repeats-2&&i===winIdx});
+    });
+  }
+  allFrames.forEach(function(f){
+    var fr=document.createElement('div');fr.className='film-frame';
+    fr.textContent=f.text;fr.dataset.winner=f.isW;strip.appendChild(fr);
+  });
+  container.appendChild(strip);
+  var frameH=56,containerH=212;
+  var targetIdx=(repeats-2)*displayItems.length+winIdx;
+  var targetY=-(targetIdx*frameH+frameH/2-containerH/2);
+  strip.style.transform='translateY(0px)';strip.style.filter='blur(5px)';
+  setTimeout(function(){
+    strip.style.transition='transform 3s cubic-bezier(.15,.8,.25,1), filter 2.5s ease-out';
+    strip.style.transform='translateY('+targetY+'px)';strip.style.filter='blur(0px)';
+  },80);
+  setTimeout(function(){
+    var frames=strip.querySelectorAll('.film-frame');
+    frames.forEach(function(f){
+      if(f.dataset.winner==='true')f.classList.add('film-winner');
+      else f.classList.add('film-dimmed');
+    });
+    appendFinalWinner(stage,winner);
+    setTimeout(function(){resolve(winner);},1000);
+  },3200);
+}
+
+/* ===== 效果22: 糖果机 ===== */
+function candyEffect(items,resolve){
+  var displayItems=pickSubset(items,8);
+  var winIdx=rand(displayItems.length),winner=displayItems[winIdx];
+  var container=document.createElement('div');container.className='candy-machine';
+  stage.appendChild(container);
+  var dome=document.createElement('div');dome.className='candy-dome';
+  var body=document.createElement('div');body.className='candy-body';
+  var chute=document.createElement('div');chute.className='candy-chute';
+  container.appendChild(dome);container.appendChild(body);container.appendChild(chute);
+  var bColors=['#e94560','#f5a623','#00d4ff','#00f5a0','#ff6b9d','#ffd700','#7b2ff7','#4ecdc4'];
+  var balls=[];
+  displayItems.forEach(function(item,i){
+    var b=document.createElement('div');b.className='candy-ball';
+    b.style.background=bColors[i%bColors.length];
+    b.style.left=(15+Math.random()*65)+'%';b.style.top=(10+Math.random()*55)+'%';
+    b.style.animationDelay=(Math.random()*0.5)+'s';b.dataset.idx=i;
+    dome.appendChild(b);balls.push(b);
+  });
+  setTimeout(function(){
+    balls[winIdx].classList.add('candy-drop');
+    setTimeout(function(){
+      var pb=document.createElement('div');pb.className='candy-ball candy-pop';
+      pb.style.background=balls[winIdx].style.background;
+      chute.appendChild(pb);
+      setTimeout(function(){
+        pb.classList.add('burst');
+        var lb=document.createElement('div');lb.className='candy-label';lb.textContent=winner;
+        container.appendChild(lb);
+        setTimeout(function(){lb.classList.add('show');},100);
+      },500);
+    },700);
+  },1800);
+  setTimeout(function(){
+    appendFinalWinner(stage,winner);
+    setTimeout(function(){resolve(winner);},1000);
+  },3800);
+}
+
+/* ===== 效果23: 塔罗占卜 ===== */
+function tarotEffect(items,resolve){
+  var displayItems=pickSubset(items,3);
+  while(displayItems.length<3)displayItems.push(items[rand(items.length)]||'?');
+  var winIdx=rand(displayItems.length),winner=displayItems[winIdx];
+  var container=document.createElement('div');container.className='tarot-container';
+  stage.appendChild(container);
+  var cards=[];
+  displayItems.forEach(function(item,i){
+    var card=document.createElement('div');card.className='tarot-card';
+    card.innerHTML='<div class="tarot-inner"><div class="tarot-back">✦</div><div class="tarot-front"></div></div>';
+    card.querySelector('.tarot-front').textContent=item;
+    container.appendChild(card);cards.push(card);
+  });
+  container.classList.add('tarot-shuffle');
+  setTimeout(function(){
+    container.classList.remove('tarot-shuffle');
+    cards.forEach(function(c,i){
+      var angle=(i-1)*12;
+      c.style.transform='rotate('+angle+'deg) translateY('+(i===1?-18:0)+'px)';
+    });
+  },1400);
+  setTimeout(function(){
+    cards[winIdx].classList.add('tarot-flipped');
+    cards.forEach(function(c,i){if(i!==winIdx)c.classList.add('tarot-dimmed');});
+    appendFinalWinner(stage,winner);
+    setTimeout(function(){resolve(winner);},1000);
+  },2600);
+}
+
+/* ===== 单项快速展示 ===== */
+function singleItemEffect(items,resolve){
+  appendFinalWinner(stage,items[0]);
+  setTimeout(function(){resolve(items[0]);},1200);
+}
+
+/* ===== 运行效果 ===== */
+function runEffect(effect,items){
+  return new Promise(function(resolve){
+    clearStage();
+    if(items.length===1){singleItemEffect(items,resolve);return;}
+    switch(effect){
+      case'wheel':wheelEffect(items,resolve);break;
+      case'slot':slotEffect(items,resolve);break;
+      case'bucket':bucketEffect(items,resolve);break;
+      case'flash':flashEffect(items,resolve);break;
+      case'card':cardEffect(items,resolve);break;
+      case'box':boxEffect(items,resolve);break;
+      case'vortex':vortexEffect(items,resolve);break;
+      case'firework':fireworkEffect(items,resolve);break;
+      case'balloon':balloonEffect(items,resolve);break;
+      case'crystal':crystalEffect(items,resolve);break;
+      case'lightning':lightningEffect(items,resolve);break;
+      case'target':targetEffect(items,resolve);break;
+      case'wave':waveEffect(items,resolve);break;
+      case'meteor':meteorEffect(items,resolve);break;
+      case'film':filmEffect(items,resolve);break;
+      case'candy':candyEffect(items,resolve);break;
+      case'tarot':tarotEffect(items,resolve);break;
+      case'random':{
+        var pool=['wheel','slot','bucket','flash','card','box','vortex','firework','balloon','crystal','lightning','target','wave','meteor','film','candy','tarot'];
+        var pick=pool[rand(pool.length)];
+        runEffect(pick,items).then(resolve);
+        return;
+      }
+    }
+  });
+}
+
+/* ===== 主抽签流程 ===== */
+function startDraw(){
+  if(isDrawing)return;
+  var items=parseItems(itemsT.value);
+  if(items.length===0){showToast('⚠️ 请先输入抽签内容！');itemsT.focus();return;}
+
+  var num=parseInt(winnersI.value)||1;
+  var allowDup=dupC.checked;
+  if(!allowDup&&num>items.length){
+    num=items.length;
+    winnersI.value=num;
+    showToast('⚠️ 不允许重复时，最多抽 '+num+' 个');
+  }
+  if(num<1)num=1;
+
+  isDrawing=true;
+  drawBtn.disabled=true;
+  drawBtn.textContent='⏳ 抽签中...';
+  resultsP.style.display='none';
+  stageEmpty&&stageEmpty.remove();
+
+  var pool=items.slice();
+  var winners=[];
+  var i=0;
+
+  function nextRound(){
+    if(i>=num){
+      finishDraw(winners);
+      return;
+    }
+    roundInd.textContent=num>1?'第 '+(i+1)+' / '+num+' 轮':'';
+    runEffect(currentEffect,pool).then(function(winner){
+      winners.push(winner);
+      if(!allowDup){
+        var idx=pool.indexOf(winner);
+        if(idx>=0)pool.splice(idx,1);
+      }
+      i++;
+      if(i<num){setTimeout(nextRound,1500);}
+      else{setTimeout(function(){finishDraw(winners);},800);}
+    });
+  }
+  nextRound();
+}
+
+function finishDraw(winners){
+  isDrawing=false;
+  drawBtn.disabled=false;
+  drawBtn.textContent='🔄 再抽一次';
+  roundInd.textContent='';
+  showResults(winners);
+  createConfetti();
+  addToHistory(winners);
+}
+
+/* ===== 结果展示 ===== */
+function showResults(winners){
+  resultsItems.innerHTML='';
+  winners.forEach(function(w){
+    var d=document.createElement('div');d.className='result-item';d.textContent=w;
+    resultsItems.appendChild(d);
+  });
+  resultsP.style.display='block';
+  resultsP.scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+
+/* ===== 历史 ===== */
+function addToHistory(winners){
+  var now=new Date();
+  var ts=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0')+'-'+String(now.getDate()).padStart(2,'0')+
+    ' '+String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0');
+  history.unshift({time:ts,winners:winners,effect:currentEffect});
+  if(history.length>50)history.pop();
+  renderHistory();
+}
+function renderHistory(){
+  if(history.length===0){historyP.style.display='none';return;}
+  historyP.style.display='block';
+  historyL.innerHTML='';
+  history.forEach(function(h){
+    var d=document.createElement('div');d.className='history-item';
+    d.innerHTML='<span class="history-time">'+h.time+' · '+h.winners.length+'个</span><span class="history-winners">'+h.winners.join('、')+'</span>';
+    historyL.appendChild(d);
+  });
+}
+
+/* ===== 事件绑定 ===== */
+// 效果选择
+document.querySelectorAll('.effect-card').forEach(function(card){
+  card.addEventListener('click',function(){
+    if(isDrawing)return;
+    document.querySelectorAll('.effect-card').forEach(function(c){c.classList.remove('selected');});
+    card.classList.add('selected');
+    currentEffect=card.dataset.effect;
+  });
+});
+
+// 预设
+document.querySelectorAll('.preset-btn').forEach(function(btn){
+  btn.addEventListener('click',function(){
+    var p=presets[btn.dataset.preset];
+    if(p){itemsT.value=p.join('\n');showToast('✅ 已填充预设：'+btn.textContent.trim());}
+  });
+});
+
+// 数量
+$('minus').addEventListener('click',function(){
+  var v=parseInt(winnersI.value)||1;if(v>1)winnersI.value=v-1;
+});
+$('plus').addEventListener('click',function(){
+  var v=parseInt(winnersI.value)||1;winnersI.value=v+1;
+});
+
+// 抽签
+drawBtn.addEventListener('click',startDraw);
+
+// 复制
+$('copyBtn').addEventListener('click',function(){
+  var text=resultsItems.querySelectorAll('.result-item');
+  var arr=[];
+  text.forEach(function(t){arr.push(t.textContent);});
+  var str='抽签结果：'+arr.join('、');
+  if(navigator.clipboard){
+    navigator.clipboard.writeText(str).then(function(){showToast('✅ 已复制到剪贴板');}).catch(function(){fallbackCopy(str);});
+  }else{fallbackCopy(str);}
+});
+function fallbackCopy(str){
+  var ta=document.createElement('textarea');ta.value=str;document.body.appendChild(ta);ta.select();
+  try{document.execCommand('copy');showToast('✅ 已复制到剪贴板');}catch(e){showToast('❌ 复制失败');}
+  ta.remove();
+}
+
+// 再抽一次
+$('againBtn').addEventListener('click',function(){
+  showStageEmpty();resultsP.style.display='none';drawBtn.textContent='🎲 开始抽签';
+  drawBtn.scrollIntoView({behavior:'smooth',block:'center'});
+});
+
+// 清空
+$('clearBtn').addEventListener('click',function(){
+  itemsT.value='';winnersI.value=1;dupC.checked=false;
+  showStageEmpty();resultsP.style.display='none';drawBtn.textContent='🎲 开始抽签';
+  showToast('🧹 已清空');
+});
+
+// Enter 快捷抽签 (Ctrl+Enter)
+document.addEventListener('keydown',function(e){
+  if((e.ctrlKey||e.metaKey)&&e.key==='Enter'){e.preventDefault();startDraw();}
+});
+
+})();
+</script>
+</body>
+</html>
