@@ -8,7 +8,7 @@
 
 18 stunning animation effects · Zero dependencies · Single-file deployment
 
-[![Live Demo](https://img.shields.io/badge/Live%20Demo-GitHub%20Pages-blue?style=for-the-badge)](https://abu6669.github.io/zzh-lucky-draw/)
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-GitHub%20Pages-blue?style=for-the-badge)](https://ablu6669.github.io/zzh-lucky-draw/)
 
 </div>
 
@@ -64,7 +64,7 @@
 
 ## 🚀 在线体验 / Live Demo
 
-👉 **[https://abu6669.github.io/zzh-lucky-draw/](https://abu6669.github.io/zzh-lucky-draw/)**
+👉 **[https://ablu6669.github.io/zzh-lucky-draw/](https://ablu6669.github.io/zzh-lucky-draw/)**
 
 ---
 
