@@ -23,7 +23,7 @@ body{
   background-attachment:fixed;color:var(--text);min-height:100vh;padding:20px 16px 40px;
 }
 
-.app{max-width:900px;margin:0 auto;}
+.app{max-width:1200px;margin:0 auto;}
 
 /* ============ 头部 ============ */
 header{text-align:center;padding:30px 0 20px;}
@@ -98,10 +98,10 @@ textarea::placeholder{color:#555566;}
 .effect-name{font-size:.95em;color:var(--text);font-weight:600;position:relative;z-index:1;line-height:1.2;}
 
 /* ============ 舞台 ============ */
-.stage-panel{min-height:480px;display:flex;flex-direction:column;align-items:center;justify-content:center;}
+.stage-panel{min-height:400px;display:flex;flex-direction:column;align-items:center;justify-content:center;}
 .round-indicator{text-align:center;color:var(--accent-2);font-weight:700;margin-bottom:12px;min-height:24px;font-size:1em;letter-spacing:1px;}
 .stage{
-  width:100%;min-height:380px;display:flex;align-items:center;justify-content:center;
+  width:100%;min-height:320px;display:flex;align-items:center;justify-content:center;
   position:relative;overflow:hidden;
 }
 .stage-empty{text-align:center;color:var(--text-muted);}
@@ -664,6 +664,160 @@ footer a{color:var(--accent-2);text-decoration:none;}
   letter-spacing:1px;line-height:1.2;
   max-width:90%;word-break:break-all;text-align:center;
 }
+
+/* ===================================================== */
+/* ============ 模式切换 Tab ============ */
+/* ===================================================== */
+.mode-tabs{display:flex;gap:10px;margin-bottom:18px;}
+.mode-tab{
+  flex:1;padding:12px;border-radius:12px;cursor:pointer;text-align:center;
+  background:rgba(255,255,255,.05);border:2px solid transparent;
+  font-size:1em;font-weight:700;color:var(--text-muted);transition:all .2s;user-select:none;
+}
+.mode-tab:hover{background:rgba(255,255,255,.1);}
+.mode-tab.active{
+  border-color:var(--accent);background:rgba(233,69,96,.12);color:var(--text);
+}
+
+/* ===================================================== */
+/* ============ 图片上传区 ============ */
+/* ===================================================== */
+.drop-zone{
+  border:2px dashed var(--glass-border);border-radius:14px;padding:34px 16px;
+  text-align:center;cursor:pointer;transition:all .25s;background:rgba(0,0,0,.15);
+}
+.drop-zone:hover,.drop-zone.dragover{
+  border-color:var(--accent);background:rgba(233,69,96,.08);
+}
+.drop-zone .dz-icon{font-size:2.4em;margin-bottom:8px;opacity:.7;}
+.drop-zone .dz-text{font-size:.95em;color:var(--text-muted);line-height:1.6;}
+.drop-zone .dz-text b{color:var(--text);}
+.thumb-grid{display:flex;flex-wrap:wrap;gap:10px;margin-top:14px;}
+.thumb-item{
+  position:relative;width:76px;height:76px;border-radius:10px;overflow:visible;
+  animation:resultPop .3s ease;
+}
+.thumb-item img{
+  width:76px;height:76px;object-fit:cover;border-radius:10px;display:block;
+  border:2px solid var(--glass-border);
+}
+.thumb-del{
+  position:absolute;top:-7px;right:-7px;width:20px;height:20px;border-radius:50%;
+  background:var(--accent);color:#fff;border:none;font-size:12px;line-height:1;
+  cursor:pointer;display:flex;align-items:center;justify-content:center;
+  box-shadow:0 2px 6px rgba(0,0,0,.4);transition:transform .15s;
+}
+.thumb-del:hover{transform:scale(1.2);}
+.thumb-count{margin-top:10px;font-size:.85em;color:var(--text-muted);}
+
+/* ===================================================== */
+/* ============ 图片动效通用 ============ */
+/* ===================================================== */
+.img-cell{
+  width:64px;height:64px;object-fit:cover;border-radius:10px;display:block;
+  border:2px solid var(--glass-border);background:#222;
+}
+.final-winner-img{
+  display:flex;flex-direction:column;align-items:center;gap:8px;
+  padding:18px 28px;background:rgba(15,12,41,.85);
+  border:3px solid var(--gold);border-radius:20px;
+  animation:resultPop .55s cubic-bezier(.2,.8,.3,1.2);
+  box-shadow:0 0 36px rgba(255,215,0,.45),inset 0 0 20px rgba(255,215,0,.08);
+}
+.final-winner-img img{
+  width:150px;height:150px;object-fit:cover;border-radius:14px;
+  border:3px solid var(--gold);box-shadow:0 0 24px rgba(255,215,0,.5);
+}
+.final-winner-img .fw-name{
+  font-size:.85em;font-weight:800;color:var(--gold);
+  text-shadow:0 0 14px rgba(255,215,0,.55);max-width:220px;word-break:break-all;
+}
+.final-winner-img .fw-emoji{font-size:1.4em;line-height:1;}
+
+/* ============ 图效1: 照片墙闪烁 ============ */
+.imgwall-grid{
+  display:flex;flex-wrap:wrap;gap:12px;justify-content:center;
+  max-width:860px;position:relative;
+}
+.imgwall-grid .img-cell{transition:all .12s;}
+.imgwall-grid .img-cell.hl{
+  border-color:var(--gold);transform:scale(1.18);
+  box-shadow:0 0 18px rgba(255,215,0,.7);z-index:2;position:relative;
+}
+.imgwall-grid .img-cell.dim{opacity:.3;filter:grayscale(.6);}
+.imgwall-grid .img-cell.win{
+  border-color:var(--gold);transform:scale(1.3);
+  box-shadow:0 0 26px rgba(255,215,0,.9);z-index:3;position:relative;
+}
+
+/* ============ 图效2: 图片轮播 ============ */
+.imgreel-frame{
+  width:230px;height:230px;border:4px solid var(--gold);border-radius:18px;
+  overflow:hidden;background:rgba(0,0,0,.35);position:relative;
+  box-shadow:0 0 30px rgba(255,215,0,.25),inset 0 0 20px rgba(0,0,0,.3);
+}
+.imgreel-frame img{width:100%;height:100%;object-fit:cover;display:block;}
+.imgreel-frame::after{
+  content:'';position:absolute;inset:0;pointer-events:none;
+  box-shadow:inset 0 0 30px rgba(0,0,0,.4);
+}
+.imgreel-name{margin-top:12px;font-size:1.1em;font-weight:700;color:var(--text-muted);min-height:26px;}
+
+/* ============ 图效3: 聚光灯 ============ */
+.imgspot-stage{position:relative;padding:18px;border-radius:16px;overflow:hidden;background:#0a0818;}
+.imgspot-grid{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;max-width:840px;position:relative;z-index:1;}
+.imgspot-grid .img-cell{filter:brightness(.22) grayscale(.5);transition:filter .15s,transform .15s;}
+.imgspot-grid .img-cell.lit{filter:none;transform:scale(1.12);border-color:var(--gold);box-shadow:0 0 20px rgba(255,215,0,.8);}
+.imgspot-grid .img-cell.win{filter:none;transform:scale(1.28);border-color:var(--gold);box-shadow:0 0 30px rgba(255,215,0,1);z-index:2;position:relative;}
+.imgspot-beam{
+  position:absolute;width:190px;height:190px;border-radius:50%;
+  background:radial-gradient(circle,rgba(255,240,180,.28),rgba(255,240,180,.08) 55%,transparent 72%);
+  pointer-events:none;z-index:2;transform:translate(-50%,-50%);
+  transition:left .13s linear,top .13s linear;left:50%;top:50%;
+}
+
+/* ============ 图效5: 连拍快门 ============ */
+.imgshutter-frame{
+  position:relative;width:250px;height:250px;border-radius:16px;overflow:hidden;
+  border:4px solid #fff;background:#000;
+  box-shadow:0 0 0 4px rgba(0,0,0,.5),0 10px 30px rgba(0,0,0,.5);
+}
+.imgshutter-frame img{width:100%;height:100%;object-fit:cover;display:block;}
+.imgshutter-corner{position:absolute;width:26px;height:26px;border:4px solid var(--gold);z-index:5;}
+.imgshutter-corner.tl{top:8px;left:8px;border-right:none;border-bottom:none;}
+.imgshutter-corner.tr{top:8px;right:8px;border-left:none;border-bottom:none;}
+.imgshutter-corner.bl{bottom:8px;left:8px;border-right:none;border-top:none;}
+.imgshutter-corner.br{bottom:8px;right:8px;border-left:none;border-top:none;}
+.imgshutter-flash{
+  position:absolute;inset:0;background:#fff;opacity:0;pointer-events:none;z-index:8;
+}
+.imgshutter-flash.snap{animation:snapFlash .18s ease;}
+@keyframes snapFlash{0%{opacity:0;}30%{opacity:.95;}100%{opacity:0;}}
+.imgshutter-hint{margin-top:12px;color:var(--text-muted);font-size:.95em;min-height:24px;}
+
+/* ============ 图效6: 头像转盘 ============ */
+.imgring-wrap{position:relative;width:340px;height:340px;}
+.imgring-disc{
+  position:absolute;inset:0;transition:transform 4s cubic-bezier(.15,.85,.25,1);
+}
+.imgring-item{
+  position:absolute;left:50%;top:50%;width:62px;height:62px;margin:-31px 0 0 -31px;
+}
+.imgring-item img{width:100%;height:100%;object-fit:cover;border-radius:10px;border:2px solid var(--glass-border);display:block;}
+.imgring-item.win img{border-color:var(--gold);box-shadow:0 0 22px rgba(255,215,0,.95);}
+.imgring-pointer{
+  position:absolute;top:-6px;left:50%;transform:translateX(-50%);z-index:10;
+  width:0;height:0;border:14px solid transparent;border-top:24px solid var(--gold);
+  filter:drop-shadow(0 0 8px rgba(255,215,0,.8));
+}
+.imgring-hub{
+  position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+  width:56px;height:56px;border-radius:50%;z-index:9;
+  background:radial-gradient(circle at 35% 35%,#f5a623,#e94560);
+  border:3px solid var(--gold);box-shadow:0 0 18px rgba(255,215,0,.5);
+  display:flex;align-items:center;justify-content:center;font-size:1.4em;
+}
+
 /* ============ 响应式 ============ */
 @media(max-width:600px){
   header h1{font-size:1.8em;}
@@ -672,8 +826,8 @@ footer a{color:var(--accent-2);text-decoration:none;}
   .effect-card{padding:14px 6px;}
   .effect-icon{font-size:1.8em;}
   .effect-name{font-size:.82em;}
-  .stage{min-height:360px;}
-  .stage-panel{min-height:460px;}
+  .stage{min-height:300px;}
+  .stage-panel{min-height:380px;}
   .slot-machine{width:260px;}
   .draw-btn{font-size:1.1em;padding:16px;}
   .card{width:72px;height:102px;}
@@ -693,14 +847,36 @@ footer a{color:var(--accent-2);text-decoration:none;}
   <!-- 输入面板 -->
   <div class="panel">
     <div class="panel-title">📋 抽签设置</div>
-    <label>抽签内容（每行一个，或用逗号 / 顿号分隔）</label>
-    <textarea id="items" placeholder="例如：&#10;张三&#10;李四&#10;王五&#10;赵六"></textarea>
-    <div class="presets">
-      <button class="preset-btn" data-preset="lunch">🍔 午餐选择</button>
-      <button class="preset-btn" data-preset="numbers">🔢 随机数字</button>
-      <button class="preset-btn" data-preset="tasks">📋 团队任务</button>
-      <button class="preset-btn" data-preset="prizes">🎁 奖品抽奖</button>
-      <button class="preset-btn" data-preset="names">👥 随机点名</button>
+
+    <!-- 模式切换 -->
+    <div class="mode-tabs">
+      <div class="mode-tab active" id="tabText">📝 文字抽奖</div>
+      <div class="mode-tab" id="tabImage">🖼️ 图片抽奖</div>
+    </div>
+
+    <!-- 文字模式输入区 -->
+    <div id="textInputArea">
+      <label>抽签内容（每行一个，或用逗号 / 顿号分隔）</label>
+      <textarea id="items" placeholder="例如：&#10;张三&#10;李四&#10;王五&#10;赵六"></textarea>
+      <div class="presets">
+        <button class="preset-btn" data-preset="lunch">🍔 午餐选择</button>
+        <button class="preset-btn" data-preset="numbers">🔢 随机数字</button>
+        <button class="preset-btn" data-preset="tasks">📋 团队任务</button>
+        <button class="preset-btn" data-preset="prizes">🎁 奖品抽奖</button>
+        <button class="preset-btn" data-preset="names">👥 随机点名</button>
+      </div>
+    </div>
+
+    <!-- 图片模式输入区 -->
+    <div id="imageInputArea" style="display:none;">
+      <label>上传图片（点击或拖拽，可多选；自动压缩为方形缩略图）</label>
+      <div class="drop-zone" id="dropZone">
+        <div class="dz-icon">📤</div>
+        <div class="dz-text"><b>点击选择图片</b> 或 拖拽图片到此处<br>支持微信头像等常见格式（jpg / png / gif / webp）</div>
+        <input type="file" id="fileInput" accept="image/*" multiple style="display:none;">
+      </div>
+      <div class="thumb-grid" id="thumbGrid"></div>
+      <div class="thumb-count" id="thumbCount" style="display:none;"></div>
     </div>
 
     <div class="control-row">
@@ -799,6 +975,34 @@ footer a{color:var(--accent-2);text-decoration:none;}
         <span class="effect-name">随机动效</span>
       </div>
     </div>
+
+    <!-- 图片模式效果 -->
+    <div class="effect-grid" id="imageEffects" style="display:none;">
+      <div class="effect-card selected" data-effect="imgwall">
+        <span class="effect-icon">🖼️</span>
+        <span class="effect-name">照片墙闪烁</span>
+      </div>
+      <div class="effect-card" data-effect="imgreel">
+        <span class="effect-icon">🎞️</span>
+        <span class="effect-name">图片轮播</span>
+      </div>
+      <div class="effect-card" data-effect="imgspot">
+        <span class="effect-icon">🔦</span>
+        <span class="effect-name">聚光灯</span>
+      </div>
+      <div class="effect-card" data-effect="imgshutter">
+        <span class="effect-icon">📸</span>
+        <span class="effect-name">连拍快门</span>
+      </div>
+      <div class="effect-card" data-effect="imgring">
+        <span class="effect-icon">🎡</span>
+        <span class="effect-name">头像转盘</span>
+      </div>
+      <div class="effect-card" data-effect="imgrandom">
+        <span class="effect-icon">🎲</span>
+        <span class="effect-name">图片随机</span>
+      </div>
+    </div>
   </div>
 
   <!-- 舞台 -->
@@ -848,11 +1052,19 @@ var itemsT=$('items'),winnersI=$('winners'),dupC=$('dup');
 var drawBtn=$('drawBtn'),stage=$('stage'),stageEmpty=$('stageEmpty');
 var roundInd=$('roundIndicator'),resultsP=$('results'),resultsItems=$('resultsItems');
 var historyP=$('historyPanel'),historyL=$('historyList'),toastEl=$('toast');
+var tabText=$('tabText'),tabImage=$('tabImage');
+var textInputArea=$('textInputArea'),imageInputArea=$('imageInputArea');
+var dropZone=$('dropZone'),fileInput=$('fileInput'),thumbGrid=$('thumbGrid'),thumbCount=$('thumbCount');
+var textEffects=$('effects'),imageEffects=$('imageEffects');
 
 /* ===== 状态 ===== */
 var currentEffect='wheel';
+var currentImageEffect='imgwall';
 var isDrawing=false;
 var history=[];
+var drawMode='text';           // 'text' | 'image'
+var imageItems=[];             // [{id, src, name}]
+var imageIdSeq=0;
 
 /* ===== 预设 ===== */
 var presets={
@@ -918,6 +1130,108 @@ function createConfetti(){
 function clearStage(){stage.innerHTML='';}
 function showStageEmpty(){
   stage.innerHTML='<div class="stage-empty"><div class="icon">🎲</div><div class="text">选择效果，点击下方按钮开始抽签</div></div>';
+}
+
+/* ===== 图片模式：上传 / 压缩 / 缩略图 ===== */
+function compressImage(file,cb){
+  var reader=new FileReader();
+  reader.onload=function(e){
+    var img=new Image();
+    img.onload=function(){
+      var size=200;
+      var canvas=document.createElement('canvas');
+      canvas.width=size;canvas.height=size;
+      var ctx=canvas.getContext('2d');
+      // cover 裁剪为方形
+      var w=img.width,h=img.height;
+      var side=Math.min(w,h);
+      var sx=(w-side)/2,sy=(h-side)/2;
+      ctx.drawImage(img,sx,sy,side,side,0,0,size,size);
+      cb(canvas.toDataURL('image/jpeg',0.85));
+    };
+    img.onerror=function(){cb(null);};
+    img.src=e.target.result;
+  };
+  reader.onerror=function(){cb(null);};
+  reader.readAsDataURL(file);
+}
+
+function addImageFiles(files){
+  var list=[];
+  for(var i=0;i<files.length;i++){
+    if(files[i].type&&files[i].type.indexOf('image/')===0)list.push(files[i]);
+  }
+  if(list.length===0){showToast('⚠️ 请选择图片文件');return;}
+  var done=0,added=0;
+  list.forEach(function(file){
+    compressImage(file,function(dataUrl){
+      done++;
+      if(dataUrl){
+        var name=(file.name||'图片').replace(/\.[^.]+$/,'');
+        imageItems.push({id:++imageIdSeq,src:dataUrl,name:name});
+        added++;
+      }
+      if(done===list.length){
+        renderThumbs();
+        if(added>0)showToast('✅ 已添加 '+added+' 张图片，共 '+imageItems.length+' 张');
+        else showToast('❌ 图片读取失败');
+      }
+    });
+  });
+}
+
+function renderThumbs(){
+  thumbGrid.innerHTML='';
+  imageItems.forEach(function(item){
+    var d=document.createElement('div');d.className='thumb-item';
+    var img=document.createElement('img');img.src=item.src;img.alt=item.name;img.title=item.name;
+    var del=document.createElement('button');del.className='thumb-del';del.textContent='✕';
+    del.addEventListener('click',function(ev){
+      ev.stopPropagation();
+      if(isDrawing)return;
+      imageItems=imageItems.filter(function(x){return x.id!==item.id;});
+      renderThumbs();
+    });
+    d.appendChild(img);d.appendChild(del);
+    thumbGrid.appendChild(d);
+  });
+  if(imageItems.length>0){
+    thumbCount.style.display='block';
+    thumbCount.textContent='已上传 '+imageItems.length+' 张图片';
+  }else{
+    thumbCount.style.display='none';
+  }
+}
+
+/* ===== 模式切换 ===== */
+function setMode(mode){
+  if(isDrawing)return;
+  drawMode=mode;
+  if(mode==='text'){
+    tabText.classList.add('active');tabImage.classList.remove('active');
+    textInputArea.style.display='block';imageInputArea.style.display='none';
+    textEffects.style.display='grid';imageEffects.style.display='none';
+  }else{
+    tabImage.classList.add('active');tabText.classList.remove('active');
+    textInputArea.style.display='none';imageInputArea.style.display='block';
+    textEffects.style.display='none';imageEffects.style.display='grid';
+  }
+}
+
+/* 图片版最终结果块 */
+function appendFinalWinnerImg(parent,item){
+  var d=document.createElement('div');
+  d.className='final-winner-img';
+  d.style.position='absolute';
+  d.style.left='50%';
+  d.style.top='50%';
+  d.style.transform='translate(-50%,-50%)';
+  d.style.zIndex='50';
+  var e=document.createElement('div');e.className='fw-emoji';e.textContent='🎉';
+  var img=document.createElement('img');img.src=item.src;img.alt=item.name;
+  var n=document.createElement('div');n.className='fw-name';n.textContent=item.name;
+  d.appendChild(e);d.appendChild(img);d.appendChild(n);
+  parent.appendChild(d);
 }
 
 /* ===== 效果1: 幸运转盘 ===== */
@@ -1761,6 +2075,238 @@ function singleItemEffect(items,resolve){
   setTimeout(function(){resolve(items[0]);},1200);
 }
 
+/* ===================================================== */
+/* ============ 图片动效（图片模式专用） ============ */
+/* ===================================================== */
+
+/* 单图快速展示 */
+function imgSingleEffect(items,resolve){
+  var wrap=document.createElement('div');
+  wrap.style.position='relative';wrap.style.width='100%';wrap.style.height='380px';
+  stage.appendChild(wrap);
+  appendFinalWinnerImg(wrap,items[0]);
+  setTimeout(function(){resolve(items[0]);},1200);
+}
+
+/* 图效1: 照片墙闪烁 */
+function imgwallEffect(items,resolve){
+  var winner=items[rand(items.length)];
+  var grid=document.createElement('div');grid.className='imgwall-grid';
+  // 图片数量多时自动缩小格子，保证全部放下
+  var cs=items.length<=12?64:(items.length<=24?52:(items.length<=48?44:36));
+  var cells=[];
+  items.forEach(function(it){
+    var img=document.createElement('img');img.className='img-cell';img.src=it.src;img.alt=it.name;
+    img.dataset.iid=it.id;
+    img.style.width=cs+'px';img.style.height=cs+'px';
+    grid.appendChild(img);cells.push(img);
+  });
+  stage.appendChild(grid);
+  var steps=Math.min(26,10+items.length*2);
+  var i=0,last=null;
+  function tick(){
+    if(last)last.classList.remove('hl');
+    var c=cells[rand(cells.length)];
+    c.classList.add('hl');last=c;
+    i++;
+    if(i<steps){
+      var t=i/steps;
+      setTimeout(tick,50+easeOutQuart(t)*380);
+    }else{
+      if(last)last.classList.remove('hl');
+      cells.forEach(function(c){
+        if(parseInt(c.dataset.iid)===winner.id){c.classList.add('win');}
+        else{c.classList.add('dim');}
+      });
+      appendFinalWinnerImg(stage,winner);
+      setTimeout(function(){resolve(winner);},1600);
+    }
+  }
+  tick();
+}
+
+/* 图效2: 图片轮播 */
+function imgreelEffect(items,resolve){
+  var winner=items[rand(items.length)];
+  var wrap=document.createElement('div');
+  wrap.style.display='flex';wrap.style.flexDirection='column';wrap.style.alignItems='center';
+  var frame=document.createElement('div');frame.className='imgreel-frame';
+  var img=document.createElement('img');img.src=items[0].src;
+  frame.appendChild(img);
+  var name=document.createElement('div');name.className='imgreel-name';
+  wrap.appendChild(frame);wrap.appendChild(name);
+  stage.appendChild(wrap);
+  var steps=24,i=0;
+  function tick(){
+    var it=items[rand(items.length)];
+    img.src=it.src;name.textContent=it.name;
+    i++;
+    if(i<steps){
+      var t=i/steps;
+      setTimeout(tick,45+easeOutQuart(t)*400);
+    }else{
+      img.src=winner.src;
+      name.style.display='none';
+      appendFinalWinnerImg(stage,winner);
+      setTimeout(function(){resolve(winner);},1500);
+    }
+  }
+  tick();
+}
+
+/* 图效4: 聚光灯 */
+function imgspotEffect(items,resolve){
+  var winner=items[rand(items.length)];
+  var wrap=document.createElement('div');wrap.className='imgspot-stage';
+  var grid=document.createElement('div');grid.className='imgspot-grid';
+  // 图片数量多时自动缩小格子
+  var cs=items.length<=12?64:(items.length<=24?52:(items.length<=48?44:36));
+  var cells=[];
+  items.forEach(function(it){
+    var img=document.createElement('img');img.className='img-cell';img.src=it.src;img.dataset.iid=it.id;
+    img.style.width=cs+'px';img.style.height=cs+'px';
+    grid.appendChild(img);cells.push(img);
+  });
+  var beam=document.createElement('div');beam.className='imgspot-beam';
+  wrap.appendChild(grid);wrap.appendChild(beam);
+  stage.appendChild(wrap);
+  var steps=Math.min(22,8+items.length*2),i=0,last=null;
+  function tick(){
+    if(last)last.classList.remove('lit');
+    var c=cells[rand(cells.length)];
+    c.classList.add('lit');last=c;
+    var wr=wrap.getBoundingClientRect(),cr=c.getBoundingClientRect();
+    beam.style.left=(cr.left-wr.left+cr.width/2)+'px';
+    beam.style.top=(cr.top-wr.top+cr.height/2)+'px';
+    i++;
+    if(i<steps){
+      var t=i/steps;
+      setTimeout(tick,90+easeOutQuart(t)*420);
+    }else{
+      if(last)last.classList.remove('lit');
+      var wc=null;
+      cells.forEach(function(c){
+        if(parseInt(c.dataset.iid)===winner.id){c.classList.add('win');wc=c;}
+      });
+      if(wc){
+        var wr2=wrap.getBoundingClientRect(),cr2=wc.getBoundingClientRect();
+        beam.style.left=(cr2.left-wr2.left+cr2.width/2)+'px';
+        beam.style.top=(cr2.top-wr2.top+cr2.height/2)+'px';
+      }
+      appendFinalWinnerImg(stage,winner);
+      setTimeout(function(){resolve(winner);},1600);
+    }
+  }
+  tick();
+}
+
+/* 图效5: 连拍快门 */
+function imgshutterEffect(items,resolve){
+  var winner=items[rand(items.length)];
+  var wrap=document.createElement('div');
+  wrap.style.display='flex';wrap.style.flexDirection='column';wrap.style.alignItems='center';
+  var frame=document.createElement('div');frame.className='imgshutter-frame';
+  var img=document.createElement('img');img.src=items[0].src;
+  frame.appendChild(img);
+  ['tl','tr','bl','br'].forEach(function(p){
+    var c=document.createElement('div');c.className='imgshutter-corner '+p;frame.appendChild(c);
+  });
+  var flash=document.createElement('div');flash.className='imgshutter-flash';
+  frame.appendChild(flash);
+  var hint=document.createElement('div');hint.className='imgshutter-hint';hint.textContent='📷 连拍中...';
+  wrap.appendChild(frame);wrap.appendChild(hint);
+  stage.appendChild(wrap);
+  var steps=20,i=0;
+  function tick(){
+    var it=items[rand(items.length)];
+    img.src=it.src;
+    i++;
+    if(i%4===0){
+      flash.classList.remove('snap');void flash.offsetWidth;flash.classList.add('snap');
+    }
+    if(i<steps){
+      var t=i/steps;
+      setTimeout(tick,50+easeOutQuart(t)*360);
+    }else{
+      img.src=winner.src;
+      flash.classList.remove('snap');void flash.offsetWidth;flash.classList.add('snap');
+      hint.textContent='📸 咔嚓！';
+      hint.style.color='var(--gold)';
+      appendFinalWinnerImg(stage,winner);
+      setTimeout(function(){resolve(winner);},1500);
+    }
+  }
+  tick();
+}
+
+/* 图效6: 头像转盘 */
+function imgringEffect(items,resolve){
+  var winIdx=rand(items.length);
+  var winner=items[winIdx];
+  // 转盘最多展示 18 张（含赢家），超出则随机抽样——赢家已随机确定，展示不影响公平
+  var shown=items;
+  if(items.length>18){
+    shown=pickSubset(items,18);
+    if(shown.indexOf(winner)<0){shown[0]=winner;}
+  }
+  var shownWinIdx=shown.indexOf(winner);
+  var n=shown.length;
+  // 尺寸与半径按数量缩放，保证圆环上不重叠
+  var sz=n<=8?62:(n<=14?52:44);
+  var R=n<=8?100:(n<=14?120:Math.min(148,Math.ceil(n*(sz+8)/(2*Math.PI))));
+  var wrap=document.createElement('div');wrap.className='imgring-wrap';
+  var disc=document.createElement('div');disc.className='imgring-disc';
+  var cells=[];
+  shown.forEach(function(it,idx){
+    var holder=document.createElement('div');holder.className='imgring-item';
+    holder.style.width=sz+'px';holder.style.height=sz+'px';
+    holder.style.margin=(-sz/2)+'px 0 0 '+(-sz/2)+'px';
+    var a=idx*(360/n);
+    holder.style.transform='rotate('+a+'deg) translate(0,'+(-R)+'px)';
+    var img=document.createElement('img');img.src=it.src;
+    holder.appendChild(img);
+    disc.appendChild(holder);cells.push(holder);
+  });
+  var hub=document.createElement('div');hub.className='imgring-hub';hub.textContent='🎡';
+  var pointer=document.createElement('div');pointer.className='imgring-pointer';
+  wrap.appendChild(disc);wrap.appendChild(hub);wrap.appendChild(pointer);
+  stage.appendChild(wrap);
+  // 赢家初始角度 shownWinIdx*(360/n)，需转到顶部：disc 旋转 -angle + 整圈
+  var spins=4+rand(3);
+  var target=spins*360-shownWinIdx*(360/n);
+  requestAnimationFrame(function(){
+    requestAnimationFrame(function(){
+      disc.style.transform='rotate('+target+'deg)';
+    });
+  });
+  setTimeout(function(){
+    cells[shownWinIdx].classList.add('win');
+    appendFinalWinnerImg(stage,winner);
+    setTimeout(function(){resolve(winner);},1600);
+  },4200);
+}
+
+/* ===== 运行图片效果 ===== */
+function runImageEffect(effect,items){
+  return new Promise(function(resolve){
+    clearStage();
+    if(items.length===1){imgSingleEffect(items,resolve);return;}
+    switch(effect){
+      case'imgwall':imgwallEffect(items,resolve);break;
+      case'imgreel':imgreelEffect(items,resolve);break;
+      case'imgspot':imgspotEffect(items,resolve);break;
+      case'imgshutter':imgshutterEffect(items,resolve);break;
+      case'imgring':imgringEffect(items,resolve);break;
+      case'imgrandom':{
+        var pool=['imgwall','imgreel','imgspot','imgshutter','imgring'];
+        var pick=pool[rand(pool.length)];
+        runImageEffect(pick,items).then(resolve);
+        return;
+      }
+    }
+  });
+}
+
 /* ===== 运行效果 ===== */
 function runEffect(effect,items){
   return new Promise(function(resolve){
@@ -1797,8 +2343,14 @@ function runEffect(effect,items){
 /* ===== 主抽签流程 ===== */
 function startDraw(){
   if(isDrawing)return;
-  var items=parseItems(itemsT.value);
-  if(items.length===0){showToast('⚠️ 请先输入抽签内容！');itemsT.focus();return;}
+  var items;
+  if(drawMode==='image'){
+    if(imageItems.length===0){showToast('⚠️ 请先上传图片！');return;}
+    items=imageItems.slice();
+  }else{
+    items=parseItems(itemsT.value);
+    if(items.length===0){showToast('⚠️ 请先输入抽签内容！');itemsT.focus();return;}
+  }
 
   var num=parseInt(winnersI.value)||1;
   var allowDup=dupC.checked;
@@ -1818,6 +2370,8 @@ function startDraw(){
   var pool=items.slice();
   var winners=[];
   var i=0;
+  var effect=(drawMode==='image')?currentImageEffect:currentEffect;
+  var runner=(drawMode==='image')?runImageEffect:runEffect;
 
   function nextRound(){
     if(i>=num){
@@ -1825,10 +2379,15 @@ function startDraw(){
       return;
     }
     roundInd.textContent=num>1?'第 '+(i+1)+' / '+num+' 轮':'';
-    runEffect(currentEffect,pool).then(function(winner){
+    runner(effect,pool).then(function(winner){
       winners.push(winner);
       if(!allowDup){
-        var idx=pool.indexOf(winner);
+        var idx=-1;
+        if(drawMode==='image'){
+          for(var k=0;k<pool.length;k++){if(pool[k].id===winner.id){idx=k;break;}}
+        }else{
+          idx=pool.indexOf(winner);
+        }
         if(idx>=0)pool.splice(idx,1);
       }
       i++;
@@ -1853,7 +2412,19 @@ function finishDraw(winners){
 function showResults(winners){
   resultsItems.innerHTML='';
   winners.forEach(function(w){
-    var d=document.createElement('div');d.className='result-item';d.textContent=w;
+    var d=document.createElement('div');d.className='result-item';
+    if(drawMode==='image'&&w&&w.src){
+      var img=document.createElement('img');
+      img.src=w.src;img.alt=w.name;
+      img.style.width='40px';img.style.height='40px';img.style.objectFit='cover';
+      img.style.borderRadius='8px';img.style.verticalAlign='middle';img.style.marginRight='8px';
+      d.appendChild(img);
+      var s=document.createElement('span');s.textContent=w.name;
+      d.appendChild(s);
+      d.style.display='inline-flex';d.style.alignItems='center';
+    }else{
+      d.textContent=w;
+    }
     resultsItems.appendChild(d);
   });
   resultsP.style.display='block';
@@ -1865,7 +2436,8 @@ function addToHistory(winners){
   var now=new Date();
   var ts=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0')+'-'+String(now.getDate()).padStart(2,'0')+
     ' '+String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0');
-  history.unshift({time:ts,winners:winners,effect:currentEffect});
+  var names=winners.map(function(w){return (w&&w.name)?w.name:String(w);});
+  history.unshift({time:ts,names:names,effect:(drawMode==='image'?'🖼️ '+currentImageEffect:currentEffect)});
   if(history.length>50)history.pop();
   renderHistory();
 }
@@ -1875,20 +2447,50 @@ function renderHistory(){
   historyL.innerHTML='';
   history.forEach(function(h){
     var d=document.createElement('div');d.className='history-item';
-    d.innerHTML='<span class="history-time">'+h.time+' · '+h.winners.length+'个</span><span class="history-winners">'+h.winners.join('、')+'</span>';
+    d.innerHTML='<span class="history-time">'+h.time+' · '+h.names.length+'个</span><span class="history-winners">'+h.names.join('、')+'</span>';
     historyL.appendChild(d);
   });
 }
 
 /* ===== 事件绑定 ===== */
-// 效果选择
-document.querySelectorAll('.effect-card').forEach(function(card){
+// 效果选择（文字 / 图片 分开绑定）
+textEffects.querySelectorAll('.effect-card').forEach(function(card){
   card.addEventListener('click',function(){
     if(isDrawing)return;
-    document.querySelectorAll('.effect-card').forEach(function(c){c.classList.remove('selected');});
+    textEffects.querySelectorAll('.effect-card').forEach(function(c){c.classList.remove('selected');});
     card.classList.add('selected');
     currentEffect=card.dataset.effect;
   });
+});
+imageEffects.querySelectorAll('.effect-card').forEach(function(card){
+  card.addEventListener('click',function(){
+    if(isDrawing)return;
+    imageEffects.querySelectorAll('.effect-card').forEach(function(c){c.classList.remove('selected');});
+    card.classList.add('selected');
+    currentImageEffect=card.dataset.effect;
+  });
+});
+
+// 模式切换
+tabText.addEventListener('click',function(){setMode('text');});
+tabImage.addEventListener('click',function(){setMode('image');});
+
+// 图片上传：点击
+dropZone.addEventListener('click',function(){if(!isDrawing)fileInput.click();});
+fileInput.addEventListener('change',function(){
+  addImageFiles(fileInput.files);
+  fileInput.value='';
+});
+// 图片上传：拖拽
+['dragenter','dragover'].forEach(function(ev){
+  dropZone.addEventListener(ev,function(e){e.preventDefault();e.stopPropagation();dropZone.classList.add('dragover');});
+});
+['dragleave','drop'].forEach(function(ev){
+  dropZone.addEventListener(ev,function(e){e.preventDefault();e.stopPropagation();dropZone.classList.remove('dragover');});
+});
+dropZone.addEventListener('drop',function(e){
+  if(isDrawing)return;
+  if(e.dataTransfer&&e.dataTransfer.files)addImageFiles(e.dataTransfer.files);
 });
 
 // 预设
@@ -1912,9 +2514,8 @@ drawBtn.addEventListener('click',startDraw);
 
 // 复制
 $('copyBtn').addEventListener('click',function(){
-  var text=resultsItems.querySelectorAll('.result-item');
   var arr=[];
-  text.forEach(function(t){arr.push(t.textContent);});
+  resultsItems.querySelectorAll('.result-item').forEach(function(t){arr.push(t.textContent);});
   var str='抽签结果：'+arr.join('、');
   if(navigator.clipboard){
     navigator.clipboard.writeText(str).then(function(){showToast('✅ 已复制到剪贴板');}).catch(function(){fallbackCopy(str);});
@@ -1935,6 +2536,7 @@ $('againBtn').addEventListener('click',function(){
 // 清空
 $('clearBtn').addEventListener('click',function(){
   itemsT.value='';winnersI.value=1;dupC.checked=false;
+  imageItems=[];renderThumbs();
   showStageEmpty();resultsP.style.display='none';drawBtn.textContent='🎲 开始抽签';
   showToast('🧹 已清空');
 });
